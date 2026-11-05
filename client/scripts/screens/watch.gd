@@ -25,7 +25,7 @@ func _ready() -> void:
 
 func _process(_delta: float) -> void:
 	var t := int(Time.get_ticks_msec() / 1000.0 - _start)
-	_timer.text = "%02d:%02d" % [t / 60, t % 60]
+	_timer.text = "%02d:%02d" % [floori(t / 60.0), t % 60]
 
 
 func _refresh() -> void:

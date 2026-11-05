@@ -57,13 +57,13 @@ func _shoot() -> void:
 	_shots.append(b64)
 	var img := Image.new()
 	if img.load_jpg_from_buffer(Marshalls.base64_to_raw(b64)) == OK:
-		var tr := TextureRect.new()
-		tr.texture = ImageTexture.create_from_image(img)
-		tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-		tr.custom_minimum_size = Vector2(130, 170)
-		_thumbs.add_child(tr)
-		UI.pop(tr, 1.15)
+		var rect := TextureRect.new()
+		rect.texture = ImageTexture.create_from_image(img)
+		rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+		rect.custom_minimum_size = Vector2(130, 170)
+		_thumbs.add_child(rect)
+		UI.pop(rect, 1.15)
 	_status.text = "Güzel! Bir açı daha çekebilir ya da gönderebilirsin."
 	_show_capture_actions()
 

@@ -108,9 +108,9 @@ func open_file_picker() -> void:
 
 func show_image(img: Image) -> void:
 	_stop_feed()
-	var tr := TextureRect.new()
-	tr.texture = ImageTexture.create_from_image(img)
-	_set_source(tr)
+	var rect := TextureRect.new()
+	rect.texture = ImageTexture.create_from_image(img)
+	_set_source(rect)
 	status_changed.emit("")
 
 
@@ -184,12 +184,12 @@ func _build_feed_source(datatype: int) -> void:
 		rect.material = m
 		_set_source(rect)
 	else:
-		var tr := TextureRect.new()
+		var rect := TextureRect.new()
 		var t := CameraTexture.new()
 		t.camera_feed_id = id
 		t.which_feed = CameraServer.FEED_RGBA_IMAGE
-		tr.texture = t
-		_set_source(tr)
+		rect.texture = t
+		_set_source(rect)
 
 
 func _set_source(c: Control) -> void:
@@ -197,9 +197,9 @@ func _set_source(c: Control) -> void:
 		_source.queue_free()
 	_source = c
 	if c is TextureRect:
-		var tr := c as TextureRect
-		tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+		var rect := c as TextureRect
+		rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	c.position = Vector2.ZERO
 	c.size = CAPTURE_SIZE
 	_viewport.add_child(c)

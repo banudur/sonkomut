@@ -2,6 +2,7 @@ extends Control
 ## Ekran yönlendirici: oda durumuna göre doğru ekranı gösterir.
 
 const SCREENS := {
+	"title": preload("res://scripts/screens/title.gd"),
 	"menu": preload("res://scripts/screens/menu.gd"),
 	"lobby": preload("res://scripts/screens/lobby.gd"),
 	"hide": preload("res://scripts/screens/hide.gd"),
@@ -41,7 +42,7 @@ func _apply_theme() -> void:
 
 func _screen_key() -> String:
 	if GameState.room.is_empty():
-		return "menu"
+		return "menu" if GameState.in_menu else "title"
 	match GameState.phase():
 		"hiding":
 			return "hide" if GameState.is_hider() else "wait_hide"
@@ -57,6 +58,10 @@ func _route() -> void:
 	if key == _current_key:
 		return
 	_current_key = key
+	if key in ["title", "menu", "lobby", "result"]:
+		Music.play_theme()
+	else:
+		Music.fade_out()
 	if _current:
 		_current.queue_free()
 	_current = (SCREENS[key] as GDScript).new()

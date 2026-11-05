@@ -50,16 +50,16 @@ static func make_theme(large: bool) -> Theme:
 	t.set_color("font_placeholder_color", "LineEdit", MUTED)
 	t.set_font_size("font_size", "LineEdit", int(30 * s))
 
-	var panel := StyleBoxFlat.new()
-	panel.bg_color = PANEL
-	panel.set_corner_radius_all(int(28 * s))
-	panel.border_color = Color(1, 1, 1, 0.12)
-	panel.set_border_width_all(1)
-	panel.content_margin_left = 24 * s
-	panel.content_margin_right = 24 * s
-	panel.content_margin_top = 20 * s
-	panel.content_margin_bottom = 20 * s
-	t.set_stylebox("panel", "PanelContainer", panel)
+	var panel_box := StyleBoxFlat.new()
+	panel_box.bg_color = PANEL
+	panel_box.set_corner_radius_all(int(28 * s))
+	panel_box.border_color = Color(1, 1, 1, 0.12)
+	panel_box.set_border_width_all(1)
+	panel_box.content_margin_left = 24 * s
+	panel_box.content_margin_right = 24 * s
+	panel_box.content_margin_top = 20 * s
+	panel_box.content_margin_bottom = 20 * s
+	t.set_stylebox("panel", "PanelContainer", panel_box)
 
 	var bar_bg := StyleBoxFlat.new()
 	bar_bg.bg_color = Color(1, 1, 1, 0.12)
@@ -169,12 +169,12 @@ static func age_picker(current: String, on_change: Callable) -> HBoxContainer:
 	var group := ButtonGroup.new()
 	for b in GameState.AGE_BANDS:
 		var btn := Button.new()
-		btn.text = b[1]
+		btn.text = "%s\n%s" % [b[2], b[1]]
 		btn.toggle_mode = true
 		btn.button_group = group
 		btn.button_pressed = b[0] == current
 		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		btn.custom_minimum_size.y = 84
+		btn.custom_minimum_size.y = 124
 		var big := GameState.is_senior()
 		btn.add_theme_stylebox_override("normal", button_box(ACCENT, "disabled", big))
 		btn.add_theme_stylebox_override("pressed", button_box(ACCENT_2, "hover", big))

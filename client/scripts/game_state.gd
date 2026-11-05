@@ -5,12 +5,13 @@ signal room_changed
 signal event(msg: Dictionary)
 signal error(text: String)
 signal settings_changed
+signal connecting_changed(active: bool)
 
 const AGE_BANDS := [
-	["child", "7-10"],
-	["teen", "11-15"],
-	["adult", "16-55"],
-	["senior", "56-70"],
+	["child", "7-10", "🧒"],
+	["teen", "11-15", "🧑"],
+	["adult", "16-55", "🧔"],
+	["senior", "56-70", "👵"],
 ]
 const SETTINGS_PATH := "user://settings.cfg"
 
@@ -21,7 +22,12 @@ var last_game_over: Dictionary = {}
 
 var player_name := ""
 var age_band := "adult"
-var server_url := "ws://192.168.1.10:8000/ws"
+const LAN_EXAMPLE_URL := "ws://192.168.1.10:8000/ws"
+const LOCAL_URL := "ws://127.0.0.1:8000/ws"
+var server_url := LAN_EXAMPLE_URL if OS.has_feature("mobile") else LOCAL_URL
+
+## Başlık ekranından "Başlat" ile menüye geçildi mi?
+var in_menu := false
 
 
 func _ready() -> void:
@@ -30,16 +36,28 @@ func _ready() -> void:
 	Net.disconnected.connect(_on_disconnected)
 
 
+func open_menu() -> void:
+	in_menu = true
+	room_changed.emit()
+
+
+func open_title() -> void:
+	in_menu = false
+	room_changed.emit()
+
+
 # ------------------------------------------------------------ eylemler
 
 func create_room() -> void:
 	_save_settings()
+	connecting_changed.emit(true)
 	Net.connect_to(server_url)
 	Net.send({"type": "create_room", "name": player_name, "age_band": age_band})
 
 
 func join_room(code: String) -> void:
 	_save_settings()
+	connecting_changed.emit(true)
 	Net.connect_to(server_url)
 	Net.send({"type": "join_room", "code": code, "name": player_name, "age_band": age_band})
 
@@ -103,6 +121,7 @@ func _on_message(msg: Dictionary) -> void:
 	match str(msg.get("type", "")):
 		"welcome":
 			player_id = str(msg.get("player_id", ""))
+			connecting_changed.emit(false)
 		"room_state":
 			var prev := phase()
 			room = msg
@@ -115,6 +134,8 @@ func _on_message(msg: Dictionary) -> void:
 			if msg.get("correct", false) and msg.has("hint"):
 				hints.append(str(msg["hint"].get("text", "")))
 		"error":
+			if room.is_empty():
+				connecting_changed.emit(false)
 			error.emit(str(msg.get("message", "Bir hata oluştu.")))
 		"notice":
 			error.emit(str(msg.get("message", "")))
@@ -124,7 +145,11 @@ func _on_message(msg: Dictionary) -> void:
 func _on_disconnected() -> void:
 	var was_in_room := not room.is_empty()
 	_clear_room()
-	error.emit("Sunucu bağlantısı koptu." if was_in_room else "Sunucuya bağlanılamadı. Adresi kontrol et.")
+	connecting_changed.emit(false)
+	if was_in_room:
+		error.emit("Sunucu bağlantısı koptu.")
+	else:
+		error.emit("Sunucuya bağlanılamadı (%s). Sunucu çalışıyor mu? README'deki 'Sunucuyu çalıştırma' adımına bak." % server_url)
 
 
 func _clear_room() -> void:
@@ -140,7 +165,10 @@ func _load_settings() -> void:
 		return
 	player_name = str(cfg.get_value("player", "name", player_name))
 	age_band = str(cfg.get_value("player", "age_band", age_band))
-	server_url = str(cfg.get_value("net", "server_url", server_url))
+	var saved := str(cfg.get_value("net", "server_url", server_url))
+	# Eski sürümün varsayılan örnek adresi masaüstünde işe yaramaz; yerel sunucuya çevir.
+	if not (saved == LAN_EXAMPLE_URL and not OS.has_feature("mobile")):
+		server_url = saved
 
 
 func _save_settings() -> void:

@@ -48,9 +48,26 @@ Bir güvenlik sınıflandırıcısı isteği reddederse sunucu tarafında öneri
 
 ## İstemciyi çalıştırma
 
-1. Godot 4.5 veya üstüyle `client/project.godot` dosyasını açın.
-2. Oyunu çalıştırın. Menüde **Sunucu adresi** alanına `ws://<bilgisayarın-yerel-IP'si>:8000/ws` yazın.
-3. Bilgisayarda kamera yoksa "Dosyadan Görüntü Seç (test)" ile deneme yapılabilir.
+> **Oda kurmak için sunucunun çalışıyor olması gerekir.** Sunucu kapalıysa "Sunucuya
+> bağlanılamadı" uyarısı çıkar.
+
+1. Önce yukarıdaki gibi sunucuyu başlatın (API anahtarı yoksa `AI_MODE=fake`).
+2. Godot 4.5 veya üstüyle `client/project.godot` dosyasını açın ve F5 ile çalıştırın.
+3. Giriş ekranında **BAŞLAT** → adınızı ve yaş grubunuzu seçin → **Yeni Oda Kur**.
+4. Aynı bilgisayarda sunucu adresi varsayılan olarak `ws://127.0.0.1:8000/ws`'dir.
+   Telefondan bağlanırken *Bağlantı ayarları* altında `ws://<bilgisayarın-yerel-IP'si>:8000/ws` yazın.
+5. Bilgisayarda kamera yoksa "Dosyadan Görüntü Seç (test)" ile deneme yapılabilir.
+
+### Giriş ekranı, müzik ve tanıtım klibi
+
+- Giriş ekranının arkasında oyunun akışını gösteren 16 saniyelik bir tanıtım animasyonu sürekli
+  döner (`scripts/ui/attract_loop.gd`). Kodla çizildiği için dosya boyutu yoktur.
+  Gerçek bir oyun kaydı kullanmak isterseniz videoyu Ogg Theora'ya çevirip
+  `client/media/intro.ogv` olarak koyun, animasyonun yerine o oynatılır:
+  `ffmpeg -i kayit.mp4 -vf scale=720:-2 -c:v libtheora -q:v 7 -an client/media/intro.ogv`
+- Giriş müziği (`client/audio/intro_theme.ogg`) telif sorunu olmasın diye
+  `tools/make_intro_music.py` ile kodla üretilmiş özgün bir parçadır. Menü ve lobide çalar,
+  oyun sırasında susar. Giriş ekranındaki düğmeyle kapatılabilir.
 
 ### Telefona aktarma
 

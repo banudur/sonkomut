@@ -16,7 +16,7 @@ func _ready() -> void:
 	box.add_child(UI.label(str(room.get("object", "?")), 52, UI.ACCENT))
 	var secs := int(_last_game_over().get("seconds", 0))
 	if secs > 0:
-		box.add_child(UI.label("Süre: %d dk %d sn" % [secs / 60, secs % 60], 28, UI.MUTED))
+		box.add_child(UI.label("Süre: %d dk %d sn" % [floori(secs / 60.0), secs % 60], 28, UI.MUTED))
 
 	if GameState.is_host():
 		box.add_child(UI.button("Yeni Tur", func() -> void: Net.send({"type": "back_to_lobby"}), UI.GOOD))

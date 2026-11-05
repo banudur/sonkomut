@@ -9,6 +9,9 @@ var _ws := WebSocketPeer.new()
 var _queue: Array[String] = []
 var _connecting := false
 var _open := false
+var _connect_started := 0
+## Bu süre içinde bağlanılamazsa vazgeç (ulaşılamayan IP'lerde TCP çok uzun bekleyebilir).
+const CONNECT_TIMEOUT_MS := 6000
 
 
 func connect_to(url: String) -> void:
@@ -23,6 +26,11 @@ func connect_to(url: String) -> void:
 		disconnected.emit()
 		return
 	_connecting = true
+	_connect_started = Time.get_ticks_msec()
+
+
+func is_connecting() -> bool:
+	return _connecting
 
 
 ## Bilerek kapatma: `disconnected` sinyali gönderilmez.
@@ -62,6 +70,11 @@ func _process(_delta: float) -> void:
 			var parsed: Variant = JSON.parse_string(raw)
 			if parsed is Dictionary:
 				message.emit(parsed)
+	elif _connecting and Time.get_ticks_msec() - _connect_started > CONNECT_TIMEOUT_MS:
+		_ws.close()
+		_connecting = false
+		_queue.clear()
+		disconnected.emit()
 	elif state == WebSocketPeer.STATE_CLOSED and (_open or _connecting):
 		_open = false
 		_connecting = false
