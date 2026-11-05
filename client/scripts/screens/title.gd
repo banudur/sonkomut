@@ -202,6 +202,7 @@ func _show_help() -> void:
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 18)
 		var icon := UI.label(s[0], 54)
+		icon.autowrap_mode = TextServer.AUTOWRAP_OFF
 		icon.custom_minimum_size.x = 80
 		row.add_child(icon)
 		var col := VBoxContainer.new()

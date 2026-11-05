@@ -280,3 +280,14 @@ def test_hider_can_correct_name_and_color():
         assert room.profile.likely_room == "mutfak"  # katalogdan
         assert room.phase == Phase.SEEKING
     run(go())
+
+
+def test_duplicate_names_get_numbered():
+    async def go():
+        lobby = Lobby(FakeVision())
+        room = lobby.create_room()
+        a = await room.add_player("Banu", AgeBand.ADULT, Inbox())
+        b = await room.add_player("Banu", AgeBand.ADULT, Inbox())
+        c = await room.add_player("Banu", AgeBand.ADULT, Inbox())
+        assert [a.name, b.name, c.name] == ["Banu", "Banu 2", "Banu 3"]
+    run(go())

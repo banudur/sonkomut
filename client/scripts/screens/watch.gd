@@ -38,5 +38,7 @@ func _refresh() -> void:
 		n.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row.add_child(n)
 		var h := int(p.get("hints_unlocked", 0))
-		row.add_child(UI.label("💡".repeat(h) + "○".repeat(3 - h), 30, UI.ACCENT_2, HORIZONTAL_ALIGNMENT_RIGHT))
+		var progress := UI.label("💡".repeat(h) + "○".repeat(3 - h), 30, UI.ACCENT_2, HORIZONTAL_ALIGNMENT_RIGHT)
+		progress.autowrap_mode = TextServer.AUTOWRAP_OFF
+		row.add_child(progress)
 		_list.add_child(row)

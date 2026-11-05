@@ -44,7 +44,9 @@ func _refresh() -> void:
 		var n := UI.label(crown + str(p.get("name")) + me, 32, UI.TEXT, HORIZONTAL_ALIGNMENT_LEFT)
 		n.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row.add_child(n)
-		row.add_child(UI.label(str(p.get("age_label", "")), 26, UI.MUTED, HORIZONTAL_ALIGNMENT_RIGHT))
+		var age := UI.label(str(p.get("age_label", "")), 26, UI.MUTED, HORIZONTAL_ALIGNMENT_RIGHT)
+		age.autowrap_mode = TextServer.AUTOWRAP_OFF
+		row.add_child(age)
 		_list.add_child(row)
 
 	UI.clear(_host_box)

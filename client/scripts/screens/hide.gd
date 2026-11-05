@@ -36,7 +36,7 @@ func _ready() -> void:
 
 
 func _on_camera_status(text: String) -> void:
-	if text != "":
+	if text != "" and is_instance_valid(_status):
 		_status.text = text
 
 

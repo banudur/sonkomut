@@ -148,6 +148,11 @@ class Room:
         if len(self.players) >= MAX_PLAYERS:
             raise GameError("Oda dolu.")
         name = (name or "").strip()[:20] or "Oyuncu"
+        taken = {p.name for p in self.players.values()}
+        base, n = name, 2
+        while name in taken:
+            name = f"{base[:17]} {n}"
+            n += 1
         p = Player(id=uuid.uuid4().hex[:8], name=name, age_band=age_band, send=send)
         self.players[p.id] = p
         if not self.host_id:

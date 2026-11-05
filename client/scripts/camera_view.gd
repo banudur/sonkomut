@@ -55,7 +55,8 @@ func _ready() -> void:
 	_flash.color = Color(1, 1, 1, 0)
 	add_child(_flash)
 
-	_start_camera()
+	# Durum mesajları, kamerayı ekleyen ekran kurulumunu bitirdikten sonra gelsin.
+	_start_camera.call_deferred()
 
 
 func _exit_tree() -> void:

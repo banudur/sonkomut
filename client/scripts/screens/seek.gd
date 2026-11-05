@@ -82,7 +82,7 @@ func _update_buttons() -> void:
 
 
 func _on_camera_status(text: String) -> void:
-	if text != "":
+	if text != "" and is_instance_valid(_status):
 		_status.text = text
 
 
@@ -156,6 +156,7 @@ func _add_hint_card(text: String, animate: bool) -> void:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 16)
 	var badge := UI.label(str(n), 40, UI.ACCENT)
+	badge.autowrap_mode = TextServer.AUTOWRAP_OFF
 	badge.custom_minimum_size.x = 56
 	row.add_child(badge)
 	var l := UI.label(text, 30, UI.TEXT, HORIZONTAL_ALIGNMENT_LEFT)
