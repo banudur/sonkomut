@@ -25,7 +25,13 @@ sunucu verir, yani istemci tarafında hile yapılamaz.
 
 ## Sunucuyu çalıştırma
 
-**API anahtarı gerekmez.** Varsayılan yerel modda yapay zekâ bilgisayarda çalışır:
+**API anahtarı gerekmez.** Varsayılan yerel modda yapay zekâ bilgisayarda çalışır.
+
+**Windows:** `server` klasöründeki **`baslat.bat`** dosyasına çift tıklayın. Python'u bulur,
+paketleri kurar ve sunucuyu başlatır. Python yüklü değilse python.org'dan kurun ve kurulumda
+"Add python.exe to PATH" kutusunu işaretleyin.
+
+**Mac / Linux:**
 
 ```bash
 cd server
