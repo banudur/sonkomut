@@ -96,20 +96,17 @@ static func button_box(color: Color, state: String, large: bool) -> StyleBoxFlat
 	return sb
 
 
-## Kaydırılabilir, kenar boşluklu dikey sayfa oluşturur ve içteki VBox'u döner.
+## Ekrana sığan (gerekirse küçülen), kenar boşluklu dikey sayfa oluşturur ve içteki VBox'u döner.
 static func page(parent: Control, separation := 24) -> VBoxContainer:
-	var scroll := ScrollContainer.new()
-	scroll.set_anchors_preset(Control.PRESET_FULL_RECT)
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	parent.add_child(scroll)
+	var fit := FitBox.new()
+	fit.set_anchors_preset(Control.PRESET_FULL_RECT)
+	parent.add_child(fit)
 	var margin := MarginContainer.new()
-	margin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	margin.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	for side in ["left", "right"]:
-		margin.add_theme_constant_override("margin_" + side, 36)
-	margin.add_theme_constant_override("margin_top", 64)
-	margin.add_theme_constant_override("margin_bottom", 48)
-	scroll.add_child(margin)
+		margin.add_theme_constant_override("margin_" + side, 28)
+	margin.add_theme_constant_override("margin_top", 40)
+	margin.add_theme_constant_override("margin_bottom", 28)
+	fit.add_child(margin)
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", separation)
 	margin.add_child(box)
@@ -146,6 +143,28 @@ static func button(text: String, on_press: Callable, color := ACCENT) -> Button:
 			b.add_theme_stylebox_override(state, button_box(color, state, GameState.is_senior()))
 	b.button_down.connect(func() -> void: pop(b, 0.95))
 	return b
+
+
+## Küçük, çerçevesiz bağlantı düğmesi (ikincil eylemler için).
+static func link(text: String, on_press: Callable) -> Button:
+	var b := Button.new()
+	b.text = text
+	b.flat = true
+	b.add_theme_font_size_override("font_size", 24)
+	b.add_theme_color_override("font_color", MUTED)
+	b.add_theme_color_override("font_hover_color", TEXT)
+	b.pressed.connect(on_press)
+	return b
+
+
+## Düğmeleri eşit genişlikte yan yana dizer.
+static func row(buttons: Array) -> HBoxContainer:
+	var r := HBoxContainer.new()
+	r.add_theme_constant_override("separation", 14)
+	for b in buttons:
+		(b as Control).size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		r.add_child(b)
+	return r
 
 
 static func panel(child: Control) -> PanelContainer:

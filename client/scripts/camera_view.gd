@@ -22,8 +22,10 @@ var _has_image := false
 
 func _ready() -> void:
 	clip_contents = true
-	custom_minimum_size = Vector2(0, 760)
+	# Kamera ekrandaki boş alanı doldurur; en az bu kadar yer kaplar.
+	custom_minimum_size = Vector2(0, 380)
 	size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	size_flags_vertical = Control.SIZE_EXPAND_FILL
 
 	_viewport = SubViewport.new()
 	_viewport.size = CAPTURE_SIZE

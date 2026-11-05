@@ -18,7 +18,7 @@ var _name_edit: LineEdit
 func _ready() -> void:
 	var box := UI.page(self, 18)
 	box.add_child(UI.label("SAKLAYAN SENSİN", 24, UI.ACCENT))
-	box.add_child(UI.label("Ebeler bakmasın! Bir nesne seç ve farklı açılardan 1-3 fotoğraf çek.", 28))
+	box.add_child(UI.label("Ebeler bakmasın! Bir nesneyi 1-3 farklı açıdan çek.", 26))
 	_camera = CameraView.new()
 	_camera.status_changed.connect(_on_camera_status)
 	box.add_child(_camera)
@@ -46,9 +46,8 @@ func _show_capture_actions() -> void:
 	shoot.disabled = _shots.size() >= MAX_SHOTS
 	_actions.add_child(shoot)
 	if _shots.size() > 0:
-		_actions.add_child(UI.button("Gönder ve Tanıt", _submit, UI.GOOD))
-		_actions.add_child(UI.button("Baştan Başla", _reset, UI.BAD))
-	_actions.add_child(UI.button("Dosyadan Görüntü Seç (test)", _camera.open_file_picker, UI.ACCENT_2))
+		_actions.add_child(UI.row([UI.button("Gönder ✓", _submit, UI.GOOD), UI.button("Baştan", _reset, UI.BAD)]))
+	_actions.add_child(UI.link("📁 Dosyadan görüntü seç (test)", _camera.open_file_picker))
 
 
 func _shoot() -> void:
@@ -65,7 +64,7 @@ func _shoot() -> void:
 		rect.texture = ImageTexture.create_from_image(img)
 		rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-		rect.custom_minimum_size = Vector2(130, 170)
+		rect.custom_minimum_size = Vector2(90, 120)
 		_thumbs.add_child(rect)
 		UI.pop(rect, 1.15)
 	_status.text = "Güzel! Bir açı daha çekebilir ya da gönderebilirsin."
@@ -137,8 +136,7 @@ func _ask_confirm(msg: Dictionary) -> void:
 		_update_summary()))
 	_actions.add_child(UI.panel(card))
 
-	_actions.add_child(UI.button("Tamam, saklandı!", _confirm_yes, UI.GOOD))
-	_actions.add_child(UI.button("Tekrar tara", _confirm_no, UI.BAD))
+	_actions.add_child(UI.row([UI.button("Saklandı ✓", _confirm_yes, UI.GOOD), UI.button("Tekrar tara", _confirm_no, UI.BAD)]))
 
 
 func _update_summary() -> void:

@@ -19,20 +19,19 @@ var _scanning := false
 func _ready() -> void:
 	var box := UI.page(self, 16)
 	box.add_child(UI.label("EBE SENSİN", 24, UI.ACCENT))
-	box.add_child(UI.label("Gizli nesneyi bul ve kameraya göster!", 30))
+	box.add_child(UI.label("Gizli nesneyi bul ve kameraya göster!", 26))
 	_camera = CameraView.new()
-	_camera.custom_minimum_size.y = 680
 	_camera.status_changed.connect(_on_camera_status)
 	box.add_child(_camera)
 	_status = UI.label("", 28, UI.MUTED)
 	box.add_child(_status)
 
 	_scan_btn = UI.button("🔍 Tara", _scan, UI.GOOD)
-	_scan_btn.custom_minimum_size.y = 120
+	_scan_btn.custom_minimum_size.y = 110
 	box.add_child(_scan_btn)
 	_hint_btn = UI.button("", _ask_hint, UI.ACCENT_2)
 	box.add_child(_hint_btn)
-	box.add_child(UI.button("Dosyadan Görüntü Seç (test)", _camera.open_file_picker))
+	box.add_child(UI.link("📁 Dosyadan görüntü seç (test)", _camera.open_file_picker))
 
 	box.add_child(UI.label("İpuçların", 26, UI.MUTED, HORIZONTAL_ALIGNMENT_LEFT))
 	_hints_box = VBoxContainer.new()
