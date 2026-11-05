@@ -1,4 +1,6 @@
-anthropic>=2.5.0
+anthropic>=2.5.0  # yalnızca AI_MODE=claude için
+opencv-python-headless>=4.9
+numpy>=1.26
 fastapi>=0.115
 uvicorn[standard]>=0.30
 pydantic>=2.7

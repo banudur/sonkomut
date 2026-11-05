@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass, field
 from enum import Enum
 
 from pydantic import BaseModel, Field
@@ -66,3 +67,13 @@ class AllHints(BaseModel):
 
     def for_band(self, band: AgeBand) -> HintSet:
         return getattr(self, band.value)
+
+
+@dataclass
+class Identification:
+    """Tanıma sonucu + saklayanın düzeltebilmesi için seçenekler."""
+
+    profile: ObjectProfile
+    alternatives: list[str] = field(default_factory=list)  # olası adlar
+    needs_name: bool = False                               # AI emin değil, saklayan seçmeli
+    colors: list[str] = field(default_factory=list)        # seçilebilir renkler

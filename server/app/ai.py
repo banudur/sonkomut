@@ -1,8 +1,10 @@
 """Görüntü AI katmanı.
 
-`ClaudeVision` gerçek Claude API'sini kullanır. `FakeVision` ağ ve API anahtarı
-olmadan geliştirme/test yapmak için deterministik cevaplar döner.
-Hangisinin kullanılacağı `AI_MODE` ortam değişkeniyle seçilir (claude | fake).
+`AI_MODE` ortam değişkeniyle seçilir:
+- local  (varsayılan): API anahtarı gerektirmez, bilgisayarda çalışan küçük bir model
+         ve elle yazılmış ipucu bankası kullanır (bkz. local_ai.py).
+- claude: Claude görüntü API'si; daha isabetli tanıma ve yaratıcı ipuçları, API anahtarı ister.
+- fake:   Testler için; görüntüye bakmaz.
 """
 
 from __future__ import annotations
@@ -14,7 +16,7 @@ from typing import Protocol, TypeVar
 import anthropic
 from pydantic import BaseModel
 
-from .models import AllHints, HintSet, MatchVerdict, ObjectProfile
+from .models import AllHints, HintSet, Identification, MatchVerdict, ObjectProfile
 
 log = logging.getLogger(__name__)
 
@@ -28,7 +30,7 @@ class AIError(RuntimeError):
 
 
 class Vision(Protocol):
-    async def identify(self, images_b64: list[str]) -> ObjectProfile: ...
+    async def identify(self, images_b64: list[str]) -> Identification: ...
 
     async def make_hints(self, profile: ObjectProfile) -> AllHints: ...
 
@@ -104,10 +106,11 @@ class ClaudeVision:
             raise AIError("AI cevabı okunamadı.")
         return response.parsed_output
 
-    async def identify(self, images_b64: list[str]) -> ObjectProfile:
+    async def identify(self, images_b64: list[str]) -> Identification:
         content = [_image_block(b) for b in images_b64]
         content.append({"type": "text", "text": "Bu nesneyi tanımla."})
-        return await self._ask(ObjectProfile, IDENTIFY_SYSTEM, content, effort="medium")
+        profile = await self._ask(ObjectProfile, IDENTIFY_SYSTEM, content, effort="medium")
+        return Identification(profile=profile)
 
     async def make_hints(self, profile: ObjectProfile) -> AllHints:
         text = (
@@ -144,8 +147,8 @@ class FakeVision:
     böylece istemci tarafında akış uçtan uca denenebilir.
     """
 
-    async def identify(self, images_b64: list[str]) -> ObjectProfile:
-        return ObjectProfile(
+    async def identify(self, images_b64: list[str]) -> Identification:
+        return Identification(profile=ObjectProfile(
             valid=bool(images_b64),
             rejection_reason="" if images_b64 else "Fotoğraf yok",
             name="vazo",
@@ -155,7 +158,7 @@ class FakeVision:
             likely_room="salon",
             distinctive_features=["ince boyun", "beyaz çiçek deseni"],
             summary="mavi seramik vazo",
-        )
+        ), alternatives=["vazo", "sürahi", "kupa"], colors=["mavi", "yeşil"])
 
     async def make_hints(self, profile: ObjectProfile) -> AllHints:
         def hs(a: str, b: str, c: str) -> HintSet:
@@ -180,8 +183,14 @@ class FakeVision:
 
 
 def make_vision() -> Vision:
-    mode = os.environ.get("AI_MODE", "claude").lower()
+    mode = os.environ.get("AI_MODE", "local").lower()
     if mode == "fake":
         log.warning("AI_MODE=fake: sahte görüntü AI'ı kullanılıyor")
         return FakeVision()
-    return ClaudeVision()
+    if mode == "claude":
+        log.info("AI_MODE=claude: Claude görüntü API'si kullanılıyor")
+        return ClaudeVision()
+    from .local_ai import LocalVision  # opencv yalnızca bu modda gerekir
+
+    log.info("AI_MODE=local: API anahtarı gerektirmeyen yerel model kullanılıyor")
+    return LocalVision()

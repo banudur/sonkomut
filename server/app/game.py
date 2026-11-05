@@ -18,7 +18,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Awaitable, Callable
 
-from . import puzzles
+from . import catalog, puzzles
 from .ai import AIError, Vision
 from .models import AGE_BAND_LABELS, AgeBand, AllHints, ObjectProfile
 
@@ -87,6 +87,7 @@ class Room:
     hider_id: str | None = None
     profile: ObjectProfile | None = None
     confirmed: bool = False
+    needs_name: bool = False
     reference_images: list[str] = field(default_factory=list)
     hints: AllHints | None = None
     winner_id: str | None = None
@@ -204,6 +205,7 @@ class Room:
         self.hider_id = None
         self.profile = None
         self.confirmed = False
+        self.needs_name = False
         self.reference_images = []  # gizlilik: fotoğraflar tur bitince silinir
         self.hints = None
         self.winner_id = None
@@ -223,32 +225,43 @@ class Room:
         hider = self._player(pid)
         await _safe_send(hider, {"type": "busy", "message": "Nesne tanınıyor..."})
         try:
-            profile = await self.vision.identify(images)
+            ident = await self.vision.identify(images)
         except AIError as e:
             raise GameError(str(e)) from e
         if self.phase != Phase.HIDING or pid != self.hider_id:
             return  # bu sırada tur iptal oldu
+        profile = ident.profile
         if not profile.valid:
             await _safe_send(hider, {"type": "identify_result", "valid": False,
                                      "message": profile.rejection_reason or "Nesne tanınamadı, tekrar dene."})
             return
         self.profile = profile
         self.reference_images = images
+        self.needs_name = ident.needs_name
         await _safe_send(hider, {
             "type": "identify_result",
             "valid": True,
             "summary": profile.summary,
-            "name": profile.name,
+            "name": profile.name if not ident.needs_name else "",
             "color": profile.color,
+            "needs_name": ident.needs_name,
+            "alternatives": ident.alternatives,
+            "colors": ident.colors,
         })
 
-    async def hider_confirm(self, pid: str, accept: bool) -> None:
+    async def hider_confirm(self, pid: str, accept: bool, name: Any = None, color: Any = None) -> None:
         if self.phase != Phase.HIDING or pid != self.hider_id or not self.profile:
             raise GameError("Onaylanacak bir nesne yok.")
         if not accept:
             self.profile = None
             self.reference_images = []
             return
+        name = name.strip() if isinstance(name, str) else ""
+        color = color.strip() if isinstance(color, str) else ""
+        if self.needs_name and not name:
+            raise GameError("Nesnenin adını seç ya da yaz.")
+        if name or color:
+            self.profile = catalog.apply_name(self.profile, name or None, color or None)
         hider = self._player(pid)
         await _safe_send(hider, {"type": "busy", "message": "İpuçları hazırlanıyor..."})
         try:

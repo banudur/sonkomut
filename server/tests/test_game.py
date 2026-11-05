@@ -210,8 +210,9 @@ def test_ai_error_is_reported_and_scan_not_penalized():
 def test_rejected_object_and_hider_leaving():
     class Rejects(FakeVision):
         async def identify(self, images):
-            p = await super().identify(images)
-            return p.model_copy(update={"valid": False, "rejection_reason": "Görüntüde insan var"})
+            ident = await super().identify(images)
+            ident.profile = ident.profile.model_copy(update={"valid": False, "rejection_reason": "Görüntüde insan var"})
+            return ident
 
     async def go():
         room, hider, hider_in, [(e0, in0), _] = await _setup(vision=Rejects())
@@ -256,4 +257,26 @@ def test_back_to_lobby_after_round():
         await room.set_age_band(e0.id, AgeBand.TEEN)
         await room.start(hider.id, e0.id)  # yeni turda başka saklayan
         assert room.hider_id == e0.id
+    run(go())
+
+
+def test_hider_can_correct_name_and_color():
+    class Unsure(FakeVision):
+        async def identify(self, images):
+            ident = await super().identify(images)
+            ident.needs_name = True
+            return ident
+
+    async def go():
+        room, hider, hider_in, [(e0, in0), _] = await _setup(vision=Unsure())
+        await room.start(hider.id, hider.id)
+        await room.hider_submit(hider.id, ["X"])
+        res = hider_in.last("identify_result")
+        assert res["needs_name"] and res["name"] == "" and "sürahi" in res["alternatives"]
+        with pytest.raises(GameError):
+            await room.hider_confirm(hider.id, True)  # ad seçilmedi
+        await room.hider_confirm(hider.id, True, "Sürahi", "yeşil")
+        assert room.profile.summary == "yeşil sürahi"
+        assert room.profile.likely_room == "mutfak"  # katalogdan
+        assert room.phase == Phase.SEEKING
     run(go())

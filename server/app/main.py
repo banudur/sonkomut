@@ -66,7 +66,7 @@ async def handle(room: Room | None, player: Player | None, msg: dict[str, Any], 
     elif t == "hider_submit":
         await room.hider_submit(pid, msg.get("images"))
     elif t == "hider_confirm":
-        await room.hider_confirm(pid, bool(msg.get("accept")))
+        await room.hider_confirm(pid, bool(msg.get("accept")), msg.get("name"), msg.get("color"))
     elif t == "hint_request":
         await room.hint_request(pid)
     elif t == "puzzle_answer":

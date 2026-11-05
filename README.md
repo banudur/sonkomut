@@ -3,7 +3,7 @@
 Ev içinde oynanan, çok oyunculu, yapay zekâ destekli nesne bulma oyunu. 7'den 70'e herkes için.
 
 1. **Saklayan**, ebeler bakmazken evdeki bir nesneyi telefon kamerasıyla 1-3 açıdan tarar.
-2. **Yapay zekâ** (Claude görüntü API'si) nesneyi tanır: "mavi seramik vazo". Saklayan onaylar.
+2. **Yapay zekâ** nesneyi tanır: "mavi vazo". Saklayan onaylar; yanlışsa doğrusunu seçer ya da yazar.
 3. AI, her **yaş grubu** için 3 kademeli ipucu hazırlar. Nesnenin adını söylemez, çağrıştırır:
    *"Çiçekler bende su içer!"* → *"Gökyüzü gibi bir rengim var."* → *"Misafirler gelince beni görür."*
 4. **Ebeler** evi dolaşıp şüphelendikleri nesneyi tarar. AI aynı nesne mi diye karşılaştırır
@@ -25,12 +25,29 @@ sunucu verir, yani istemci tarafında hile yapılamaz.
 
 ## Sunucuyu çalıştırma
 
+**API anahtarı gerekmez.** Varsayılan yerel modda yapay zekâ bilgisayarda çalışır:
+
 ```bash
 cd server
-pip install -r requirements-dev.txt
-export ANTHROPIC_API_KEY=...      # ya da: AI_MODE=fake (AI'sız deneme)
+pip install -r requirements.txt
 uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
+
+İlk taramada küçük bir görüntü modeli (MobileNetV2, 14 MB) otomatik indirilir
+ve `server/models/` klasörüne kaydedilir. Sonrasında internet gerekmez.
+
+### Yapay zekâ modları (`AI_MODE`)
+
+| Mod | Anahtar | Nasıl çalışır |
+|---|---|---|
+| `local` (varsayılan) | Gerekmez | Nesne türünü küçük bir model, rengi piksel analizi tanır. "Aynı nesne mi?" kararı ayırt edici desen noktalarının eşleştirilmesiyle verilir. İpuçları ~90 ev eşyası için elle yazılmış bilmece bankasından gelir. Katalogda olmayan nesnelerde harf ipucu verilir. |
+| `claude` | `ANTHROPIC_API_KEY` | Claude görüntü API'si: daha isabetli tanıma ve her nesneye özel yaratıcı ipuçları. |
+| `fake` | Gerekmez | Sadece test içindir, görüntüye bakmaz. |
+
+Yerel modun sınırları: Model 1000 genel sınıf bildiği için bazı nesneleri yanlış adlandırabilir.
+Bu yüzden saklayan, onay ekranında adı ve rengi düzeltebilir. Desensiz, tek renk nesnelerde
+eşleştirme daha zordur; ebenin nesneyi yakından ve ortalayarak taraması gerekir.
+Eşikler `server/app/local_ai.py` başında, gerçek cihazlarda denenip ayarlanmalıdır.
 
 Testler (AI gerektirmez):
 
@@ -38,20 +55,16 @@ Testler (AI gerektirmez):
 cd server && python -m pytest -q
 ```
 
-`AI_MODE=fake` modunda AI görüntüye bakmaz: nesne hep "mavi seramik vazo" olur ve ebe,
-saklayanın gönderdiği fotoğraflardan biriyle **aynı** görüntüyü tararsa eşleşme sayılır.
-Akışı uçtan uca denemek için iki istemcide aynı test görüntüsünü "Dosyadan seç" ile seçmek yeterli.
-
-Kullanılan model `CLAUDE_MODEL` ortam değişkeniyle değiştirilebilir (varsayılan `claude-opus-5-5`).
-Bir güvenlik sınıflandırıcısı isteği reddederse sunucu tarafında önerilen yedek modele düşülür
-(`fallbacks: "default"`).
+Claude modunda kullanılan model `CLAUDE_MODEL` ortam değişkeniyle değiştirilebilir
+(varsayılan `claude-opus-5-5`). Bir güvenlik sınıflandırıcısı isteği reddederse sunucu tarafında
+önerilen yedek modele düşülür (`fallbacks: "default"`).
 
 ## İstemciyi çalıştırma
 
 > **Oda kurmak için sunucunun çalışıyor olması gerekir.** Sunucu kapalıysa "Sunucuya
 > bağlanılamadı" uyarısı çıkar.
 
-1. Önce yukarıdaki gibi sunucuyu başlatın (API anahtarı yoksa `AI_MODE=fake`).
+1. Önce yukarıdaki gibi sunucuyu başlatın.
 2. Godot 4.5 veya üstüyle `client/project.godot` dosyasını açın ve F5 ile çalıştırın.
 3. Giriş ekranında **BAŞLAT** → adınızı ve yaş grubunuzu seçin → **Yeni Oda Kur**.
 4. Aynı bilgisayarda sunucu adresi varsayılan olarak `ws://127.0.0.1:8000/ws`'dir.
@@ -96,5 +109,6 @@ Ev içi fotoğraflar işleniyor ve oyuncular arasında çocuklar var:
 
 - Fotoğraflar diske yazılmaz, sadece tur boyunca bellekte tutulur ve tur bitince silinir.
 - AI'a insan, evcil hayvan, ekran ya da belge içeren görüntüleri reddetmesi söylenir.
-- Fotoğraflar AI sağlayıcısına (Anthropic) gönderilir. Yayına almadan önce KVKK aydınlatma
-  metni ve ebeveyn onayı eklenmeli.
+- Varsayılan yerel modda fotoğraflar bilgisayardan hiç çıkmaz.
+- Claude modunda fotoğraflar AI sağlayıcısına (Anthropic) gönderilir. Bu modla yayına almadan önce
+  KVKK aydınlatma metni ve ebeveyn onayı eklenmeli.
