@@ -6,6 +6,10 @@
   Ortada Kemençeci Horoz çalar. Tempo yükselince tavuklar meşhur "titreme"ye geçer.
 - **Hamam Disko**: Göbek taşında DJ Tellak, tavanda disko topu, tavuklar peştemalle ve güneş gözlüğüyle dans eder.
 
+| Tavuk Horonu | Mahalle Kavgası | Hamam Disko |
+|---|---|---|
+| ![](ekran/a_horon.png) | ![](ekran/b_kavga.png) | ![](ekran/c_hamam.png) |
+
 ## İzleyici ne yapınca ne olur?
 
 | İzleyici | Oyunda |
