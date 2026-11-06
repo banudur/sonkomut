@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kümes Paneli</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; background: #16131f; color: #eee; font: 15px "Segoe UI", Arial, sans-serif; }
+  main { max-width: 640px; margin: 0 auto; padding: 16px; }
+  h1 { font-size: 22px; margin: 4px 0 14px; }
+  h2 { font-size: 15px; color: #ffe066; margin: 0 0 10px; text-transform: uppercase; letter-spacing: .04em; }
+  section { background: #221d30; border-radius: 12px; padding: 14px; margin-bottom: 14px; }
+  .satir { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  input[type=text] { flex: 1; min-width: 140px; background: #110e19; color: #fff; border: 1px solid #3c3450; border-radius: 8px; padding: 9px 10px; font-size: 15px; }
+  button { background: #3b3253; color: #fff; border: 0; border-radius: 8px; padding: 9px 12px; font-size: 14px; font-weight: 600; cursor: pointer; }
+  button:hover { background: #4d4170; }
+  button.ana { background: #e8590c; } button.ana:hover { background: #fd7e14; }
+  button.yesil { background: #2b8a3e; }
+  #durum { margin-top: 10px; padding: 8px 10px; border-radius: 8px; background: #110e19; font-size: 14px; }
+  .nokta { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; background: #868e96; vertical-align: middle; }
+  .bagli .nokta { background: #40c057; } .baglaniyor .nokta { background: #fab005; } .hata .nokta { background: #fa5252; }
+  label { display: flex; gap: 6px; align-items: center; cursor: pointer; }
+  .not { color: #aaa; font-size: 13px; line-height: 1.5; }
+  code { background: #110e19; padding: 1px 5px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>🐔 Kümes Sahnesi: Kontrol Paneli</h1>
+
+  <section>
+    <h2>TikTok bağlantısı</h2>
+    <div class="satir">
+      <input id="kullanici" type="text" placeholder="TikTok kullanıcı adınız (örn. horoncu_temel)">
+      <button class="ana" id="baglan">Bağlan</button>
+      <button id="kes">Kes</button>
+    </div>
+    <div id="durum"><span class="nokta"></span><span id="durum-metin">Sunucuya bağlanılıyor...</span></div>
+    <p class="not">Önce TikTok'ta canlı yayını başlatın, sonra "Bağlan"a basın. Yayın kapalıyken bağlantı kurulamaz.</p>
+  </section>
+
+  <section>
+    <h2>Sahne</h2>
+    <div class="satir">
+      <button class="yesil" data-komut="mod" data-deger="horon">🐔 Tavuk Horonu</button>
+      <button class="yesil" data-komut="mod" data-deger="hamam">🪩 Hamam Disko</button>
+      <label><input type="checkbox" id="otoMod"> 5 dakikada bir sahne değiştir</label>
+    </div>
+    <div class="satir" style="margin-top:10px">
+      <label><input type="checkbox" id="demo"> Demo (sahte izleyiciler)</label>
+      <button data-komut="topluKavga">🥊 Mahalle kavgası başlat</button>
+      <button data-komut="sifirla">Puanları sıfırla</button>
+      <button data-komut="temizle">Tavukları temizle</button>
+      <button data-komut="ses">🔊 Ses aç/kapa</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Deneme olayları</h2>
+    <div class="satir">
+      <input id="t-ad" type="text" placeholder="İzleyici adı" value="deneme_izleyici">
+      <input id="t-metin" type="text" placeholder="Yorum" value="Selam!">
+      <button id="t-yorum">💬 Yorum gönder</button>
+    </div>
+    <div class="satir" style="margin-top:10px">
+      <button data-test="kavga">🥊 kavga</button>
+      <button data-test="yumurta">🥚 yumurta</button>
+      <button data-test="begeni">❤️ 30 beğeni</button>
+      <button data-test="h1">🌹 1 jeton</button>
+      <button data-test="h30">💎 30 jeton</button>
+      <button data-test="h99">🎁 99 jeton</button>
+      <button data-test="h500">🚀 500 jeton</button>
+      <button data-test="takip">➕ Takip</button>
+      <button data-test="paylasim">📣 Paylaşım</button>
+    </div>
+  </section>
+
+  <p class="not">Oyun ekranı: <code>http://localhost:8080</code>. OBS veya TikTok LIVE Studio'da tarayıcı kaynağı olarak ekleyin
+  (720×1280). Oyun ekranında kısayollar: <b>M</b> sahne, <b>D</b> demo, <b>S</b> ses, <b>1-7</b> deneme olayları.</p>
+</main>
+<script>
+  const $ = (s) => document.querySelector(s);
+  let ws;
+  function gonder(m) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(m)); }
+  function baglan() {
+    ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws`);
+    ws.onmessage = (e) => {
+      const m = JSON.parse(e.data);
+      if (m.type === 'durum') {
+        $('#durum').className = m.baglanti;
+        $('#durum-metin').textContent = m.mesaj;
+        if (m.kullanici && !$('#kullanici').value) $('#kullanici').value = m.kullanici;
+      }
+    };
+    ws.onopen = () => { $('#durum-metin').textContent = 'Sunucuya bağlı. TikTok bağlantısı bekleniyor.'; };
+    ws.onclose = () => { $('#durum').className = 'hata'; $('#durum-metin').textContent = 'Sunucu kapalı! baslat.bat / "npm start" çalışıyor mu?'; setTimeout(baglan, 3000); };
+  }
+  baglan();
+  $('#baglan').onclick = () => gonder({ type: 'baglan', kullanici: $('#kullanici').value });
+  $('#kullanici').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('#baglan').click(); });
+  $('#kes').onclick = () => gonder({ type: 'kes' });
+  document.querySelectorAll('[data-komut]').forEach((b) => b.onclick = () => gonder({ type: 'komut', ad: b.dataset.komut, deger: b.dataset.deger }));
+  $('#demo').onchange = (e) => gonder({ type: 'komut', ad: 'demo', deger: e.target.checked });
+  $('#otoMod').onchange = (e) => gonder({ type: 'komut', ad: 'otoMod', deger: e.target.checked });
+  const kisi = () => { const ad = $('#t-ad').value.trim() || 'deneme'; return { id: ad, ad }; };
+  $('#t-yorum').onclick = () => gonder({ type: 'olay', tur: 'yorum', kisi: kisi(), metin: $('#t-metin').value });
+  $('#t-metin').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('#t-yorum').click(); });
+  const testler = {
+    kavga: { tur: 'yorum', metin: 'kavga' }, yumurta: { tur: 'yorum', metin: 'yumurta' },
+    begeni: { tur: 'begeni', adet: 30 }, takip: { tur: 'takip' }, paylasim: { tur: 'paylasim' },
+    h1: { tur: 'hediye', jeton: 1, hediye: 'Gül', adet: 1 }, h30: { tur: 'hediye', jeton: 30, hediye: 'Donat', adet: 1 },
+    h99: { tur: 'hediye', jeton: 99, hediye: 'Büyük Hediye', adet: 1 }, h500: { tur: 'hediye', jeton: 500, hediye: 'Roket', adet: 1 },
+  };
+  document.querySelectorAll('[data-test]').forEach((b) => b.onclick = () => gonder({ type: 'olay', kisi: kisi(), ...testler[b.dataset.test] }));
+</script>
+</body>
+</html>

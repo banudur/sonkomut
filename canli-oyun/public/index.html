@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kümes Sahnesi</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+  body { display: flex; align-items: center; justify-content: center; }
+  canvas { display: block; }
+  #ses-uyari {
+    position: fixed; left: 50%; top: 45%; transform: translateX(-50%);
+    background: rgba(0,0,0,.75); color: #fff; font: 600 15px "Segoe UI", Arial, sans-serif;
+    padding: 10px 16px; border-radius: 10px; pointer-events: none;
+  }
+</style>
+</head>
+<body>
+<canvas id="oyun" width="720" height="1280"></canvas>
+<div id="ses-uyari">🔊 Müziği başlatmak için ekrana tıklayın</div>
+<script type="module" src="oyun.js"></script>
+</body>
+</html>
