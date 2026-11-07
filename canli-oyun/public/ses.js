@@ -254,6 +254,7 @@ export class Ses {
   }
 
   gidak(kac = 1, perde = 1) {
+    if (this.mod === 'hamam') { this.islik(perde); return; }
     if (!this.calisiyor || !this.sinirla('gidak', 120)) return;
     const c = this.ctx;
     let t = c.currentTime + 0.01;
@@ -364,6 +365,23 @@ export class Ses {
     o.connect(g).connect(this.efektKazanc);
     o.start(t); o.stop(t + 0.52);
     this.gurultuPatla(t + 0.5, 0.6, 1200, 'lowpass', 0.7);
+  }
+
+  islik(perde = 1) {
+    if (!this.calisiyor || !this.sinirla('islik', 260)) return;
+    const c = this.ctx, t = c.currentTime + 0.01;
+    const o = c.createOscillator();
+    o.type = 'sine';
+    const f = (800 + Math.random() * 300) * perde;
+    o.frequency.setValueAtTime(f * 0.7, t);
+    o.frequency.exponentialRampToValueAtTime(f * 1.6, t + 0.16);
+    o.frequency.exponentialRampToValueAtTime(f * 1.05, t + 0.34);
+    const g = c.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(0.16, t + 0.03);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.38);
+    o.connect(g).connect(this.efektKazanc);
+    o.start(t); o.stop(t + 0.4);
   }
 
   kese() {

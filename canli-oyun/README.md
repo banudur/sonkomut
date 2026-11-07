@@ -4,11 +4,11 @@
 
 - **Tavuk Horonu**: Yaylada tavuklar el (kanat) ele tutuşup 7/16 aksak ritimle horon teper.
   Ortada Kemençeci Horoz çalar. Tempo yükselince tavuklar meşhur "titreme"ye geçer.
-- **Hamamcan Disko**: Göbek taşındaki DJ masasında **Hamamcan** çalar: bıyıklı, peştemallı, elinde kesesi olan
-  iri bir horoz. Tavanda disko topu var, tavuklar peştemalle ve güneş gözlüğüyle dans eder. Hamamcan ara sıra
-  masadan inip bir tavuğu keseler (köpükler, "FIŞ FIŞ") ya da tasla soğuk su atar.
+- **Hamamcan Disko**: Hamamda disko! Bu sahnede herkes **peştemallı bir adam** olur (nalın, havlu, bıyık, göbek).
+  DJ kabininde pala bıyıklı **Hamamcan** çalar, tavanda disko topu döner. Hamamcan ara sıra kabinden tasla
+  soğuk su atar. Hediye atan **göbek taşına yatabilir** ya da **tellak olup** başkalarını keseleyebilir.
 
-| Tavuk Horonu | Mahalle Kavgası | Hamamcan Disko | Köpük Partisi |
+| Tavuk Horonu | Mahalle Kavgası | Hamamcan Disko | Tellak ve köpük |
 |---|---|---|---|
 | ![](ekran/a_horon.png) | ![](ekran/b_kavga.png) | ![](ekran/c_hamam.png) | ![](ekran/d_kopuk.png) |
 
@@ -19,11 +19,22 @@
 | Yorum yazar | Kendi adıyla bir tavuk halkaya katılır, yorumu konuşma balonunda çıkar, zıplar |
 | `kavga` yazar | Tavuğu rastgele birine dalar. `kavga @isim` yazarsa o kişiye dalar. Toz bulutu, POW/GÜM, uçuşan tüyler; kaybeden bayılır |
 | `yumurta` yazar | Tavuğu gıdaklayarak yumurtlar |
-| `hamamcan` / `kese` yazar | Hamamcan Disko'da Hamamcan gelip o tavuğu keseler ya da tasla su atar (+puan) |
+| `kese` yazar (hamam) | Tellaklardan biri gelip onu keseler. Tellak yoksa "30 jeton at, tellak ol" der |
+| `hamamcan` yazar (hamam) | Hamamcan kabinden ona tasla soğuk su atar |
 | `çıldır` yazar | Tavuğu birkaç saniye çıldırır (20 sn bekleme süresi var) |
 | Beğeni | Tempo göstergesi dolar, müzik ve dans hızlanır |
 | Hediye (1+ jeton) | Gönderenin tavuğu ÇILDIRIR: deli gibi koşar, kanat çırpar, tüy saçar. Jeton arttıkça süre uzar |
 | 30+ jeton | Konfeti, herkes zıplar. Hamamcan Disko'da ayrıca **KÖPÜK PARTİSİ** başlar |
+
+### Hamamcan Disko'ya özel roller
+
+| Hediye | Rol |
+|---|---|
+| 1-4 jeton | Çıldırır, deli gibi dans eder |
+| **5+ jeton** | **Göbek taşına yatar** (60 sn, tekrar atınca uzar). 4 yer var; dolunca en eski kalkar |
+| **30+ jeton** | **Tellak olur** (2 dk): eline kese, omzuna havlu alır. Önce göbek taşında yatanları, sonra "kese" yazanları keseler. Her keseleme +5 puan. En fazla 3 tellak |
+
+Rolleri olanlar kavgaya girmez ("Şimdi işim var!"). Sahne Tavuk Horonu'na dönünce roller biter.
 | 99+ jeton | **MAHALLE KAVGASI** (herkes birbirine girer) veya **TOPLU ÇILGINLIK**. 300+ jetonda ikisi birden |
 | 500+ jeton | Havai fişek ve kalıcı **altın taç**. Altın taçlı tavuk kavgalarda daha güçlüdür |
 | Takip / Paylaşım | Kalpler / yumurta yağmuru |
@@ -50,7 +61,7 @@ Hediye gönderenler kavgalarda daha şanslıdır. Lider tablosunda (Kümes Krall
 Kontrol panelini ayrı bir sekmede tutun. Sahne değiştirme, demo modu ve deneme olayları oradadır.
 Yayına çıkmadan önce **Demo** kutusunu açarak oyunu sahte izleyicilerle deneyebilirsiniz.
 
-Oyun ekranı kısayolları: **M** sahne değiştir, **D** demo, **S** ses, **1-7** deneme olayları.
+Oyun ekranı kısayolları: **M** sahne değiştir, **D** demo, **S** ses, **1-9** deneme olayları (8: 5 jeton, 9: 30 jeton).
 Adres sonuna `?mod=hamam` eklenirse Hamamcan Disko ile başlar, `?demo=1` eklenirse demo açık başlar.
 
 ## Bağlantı sorunları

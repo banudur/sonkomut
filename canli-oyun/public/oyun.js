@@ -8,8 +8,10 @@ const ctx = tuval.getContext('2d');
 const ses = new Ses();
 
 const MERKEZ = { x: 360, y: 820 };
-const HALKA_DIS = { rx: 300, ry: 165 };
-const HALKA_IC = { rx: 195, ry: 105 };
+const HALKALAR = {
+  horon: { y: 820, dis: { rx: 300, ry: 165 }, ic: { rx: 195, ry: 105 } },
+  hamam: { y: 890, dis: { rx: 310, ry: 140 }, ic: { rx: 228, ry: 100 } },
+};
 const DIS_KAPASITE = 30;
 const MAKS_TAVUK = 64;
 
@@ -31,7 +33,7 @@ const S = {
   flas: 0,
   fisekSure: 0,
   sonrakiOtoKavga: 25,
-  hc: { x: 360, y: 815, durum: 'dj', hedef: null, tur: null, t: 0, balon: null, sonraki: 15, yuruyor: false },
+  hc: { x: 360, y: 650, durum: 'dj', hedef: null, tur: null, t: 0, balon: null, sonraki: 15, yuruyor: false },
   kopuk: 0,
   demo: false,
   demoSayac: 0,
@@ -59,17 +61,35 @@ const GOVDE_RENK = [
 ];
 const YAZMA_RENK = ['#d6336c', '#7048e8', '#f08c00', '#1c7ed6', '#2b8a3e', '#c92a2a', '#e64980'];
 
+// Hamam sahnesinde herkes peştemallı bir adam olarak görünür
+const TEN = ['#f1c27d', '#e0ac69', '#ffdbac', '#c68642', '#d9a066', '#8d5524'];
+const SAC_RENK = ['#2b1d14', '#1a1a1a', '#5a3825', '#8a8a8a', '#3b2a1e'];
+const PESTEMAL = [['#c92a2a', '#fff'], ['#1971c2', '#fff'], ['#2b8a3e', '#f8f9fa'], ['#862e9c', '#ffd43b'], ['#e8590c', '#fff'], ['#343a40', '#e9ecef'], ['#0c8599', '#fff']];
+function insanOzellik(h) {
+  return {
+    ten: TEN[(h >>> 3) % TEN.length],
+    sac: (h >>> 6) % 4,              // 0 kel, 1 kısa, 2 kıvırcık, 3 yana taralı
+    sacRenk: SAC_RENK[(h >>> 9) % SAC_RENK.length],
+    biyik: (h >>> 11) % 3,           // 0 yok, 1 düz, 2 pala
+    gobek: 17 + ((h >>> 13) % 8),
+    pest: PESTEMAL[(h >>> 16) % PESTEMAL.length],
+    kil: (h >>> 19) % 3 === 0,
+    havlu: (h >>> 21) % 3,           // 0 yok, 1 başta, 2 omuzda
+  };
+}
+
 // ------------------------------------------------------------------ tavuk
 function tavukOlustur(kisi, npc = false) {
   const h = ozet(kisi.id);
   const c = {
+    insan: insanOzellik(h),
     id: kisi.id,
     ad: kisi.ad,
     npc,
     renk: GOVDE_RENK[h % GOVDE_RENK.length],
-    kiyafet: (h >> 4) % 2,                 // 0: yazma/havlu, 1: yelek/peştemal
-    yazma: YAZMA_RENK[(h >> 8) % YAZMA_RENK.length],
-    faz: ((h >> 12) % 100) / 100,
+    kiyafet: (h >>> 4) % 2,                 // 0: yazma/havlu, 1: yelek/peştemal
+    yazma: YAZMA_RENK[(h >>> 8) % YAZMA_RENK.length],
+    faz: ((h >>> 12) % 100) / 100,
     x: Math.random() < 0.5 ? -60 : W + 60,
     y: rnd(760, 1000),
     hx: 0, hy: 0,
@@ -147,6 +167,7 @@ function balon(c, metin, sure = 3) { c.balon = { metin: kisalt(metin, 26), sure 
 
 // halkadaki yerlerin hesaplanması
 function yerleriHesapla() {
+  const hk = HALKALAR[S.mod];
   const n = S.tavuklar.length;
   const dis = Math.min(n, DIS_KAPASITE);
   const ic = n - dis;
@@ -154,11 +175,11 @@ function yerleriHesapla() {
     let a, rx, ry;
     if (i < dis) {
       a = S.halkaAci + (i / dis) * Math.PI * 2;
-      rx = HALKA_DIS.rx; ry = HALKA_DIS.ry;
+      rx = hk.dis.rx; ry = hk.dis.ry;
     } else {
       const j = i - dis;
       a = -S.halkaAci * 1.3 + (j / ic) * Math.PI * 2;
-      rx = HALKA_IC.rx; ry = HALKA_IC.ry;
+      rx = hk.ic.rx; ry = hk.ic.ry;
     }
     c.halkaSira = i < dis ? i : i - dis;
     c.halkaIc = i >= dis;
@@ -195,17 +216,24 @@ function yorum(kisi, metin) {
     ses.gidak(2);
   }
   const k = kis(metin);
-  if (/hamamcan|hamam can|kese|🧼/.test(k)) {
-    if (S.mod !== 'hamam') balon(c, 'Hamamcan diskoda! 🪩');
-    else if (!hamamcanIs(c, k.includes('kese') ? 'kese' : null)) balon(c, 'Hamamcan meşgul, sıradayım!');
+  const hamam = S.mod === 'hamam';
+  if (/hamamcan|hamam can/.test(k)) {
+    if (!hamam) balon(c, 'Hamamcan hamamda! 🧼');
+    else if (!hamamcanIs(c)) balon(c, 'Hamamcan meşgul!');
     else zipla(c);
+  } else if (hamam && /kese|🧼|🧽/.test(k)) {
+    keseIste(c);
+  } else if (hamam && /tellak/.test(k)) {
+    balon(c, `Tellak olmak: ${TELLAK_JETON}+ jeton 🧽`, 3);
+  } else if (hamam && /göbek|gobek|yatayım|yatmak/.test(k)) {
+    balon(c, `Göbek taşına yatmak: ${YATMA_JETON}+ jeton 🛁`, 3);
   } else if (/kavga|dövüş|dovus|kapış|kapis|savaş|savas|kafa at|🥊|👊/.test(k)) {
     kavgaIstegi(c, hedefBul(k, c));
   } else if (/yumurta|🥚/.test(k)) {
-    yumurtla(c);
+    if (hamam) balon(c, 'Hamamda yumurta mı olur! 😂'); else yumurtla(c);
   } else if (/çıldır|cildir|deli|çıldırt|cildirt/.test(k)) {
     if (c.cildirBekleme <= 0) { cildir(c, 4); c.cildirBekleme = 20; }
-    balon(c, 'GIDAAAK!!');
+    balon(c, cilginLaf(true));
   } else if (/disko|disco/.test(k) && S.mod === 'horon') {
     balon(c, 'Hamama gidelim! 🪩');
     zipla(c);
@@ -231,9 +259,11 @@ function hediye(kisi, jeton, hediyeAdi, adet) {
   puanEkle(kisi, jeton * 10);
   S.tempo = Math.min(100, S.tempo + Math.min(35, 4 + jeton));
   const sure = Math.min(45, 6 + Math.log2(jeton + 1) * 4);
-  cildir(c, sure);
-  balon(c, sec(['GIDAAAK!!!', 'ÇILDIRDIM!', 'TUTMAYIN BENİ!', 'Hoppaaa!', 'Bok bok BOOOK!']), 3);
-  akisEkle(`🎁 ${kisalt(kisi.ad, 14)}: ${adet > 1 ? adet + 'x ' : ''}${hediyeAdi} → ÇILDIRDI!`, '#ffd43b');
+  let sonuc = 'ÇILDIRDI!';
+  if (S.mod === 'hamam' && jeton >= TELLAK_JETON) { rolUygula(c, 'tellak'); sonuc = 'TELLAK OLDU!'; }
+  else if (S.mod === 'hamam' && jeton >= YATMA_JETON) { rolUygula(c, 'yat'); sonuc = 'GÖBEK TAŞINA YATTI!'; }
+  else { cildir(c, sure); balon(c, cilginLaf(true), 3); }
+  akisEkle(`🎁 ${kisalt(kisi.ad, 14)}: ${adet > 1 ? adet + 'x ' : ''}${hediyeAdi} → ${sonuc}`, '#ffd43b');
   for (let i = 0; i < 8 + Math.min(40, jeton); i++) parcacik('tuy', c.x, c.y - 30, { renk: c.renk[0] });
   parcacik('yazi', c.x, c.y - 100, { metin: `+${jeton * 10}`, renk: '#ffd43b', boyut: 30 });
   ses.gidak(3, 1.15);
@@ -264,7 +294,8 @@ function hediye(kisi, jeton, hediyeAdi, adet) {
   if (jeton >= 500) {
     c.altinTac = true;
     S.fisekSure = 8;
-    mansetGoster('ALTIN TAVUK!', `${kisalt(kisi.ad, 18)} kümesin kralı oldu 👑`, '#ffd43b');
+    if (S.mod === 'hamam') mansetGoster('HAMAM AĞASI!', `${kisalt(kisi.ad, 18)} hamamın ağası oldu 👑`, '#ffd43b');
+    else mansetGoster('ALTIN TAVUK!', `${kisalt(kisi.ad, 18)} kümesin kralı oldu 👑`, '#ffd43b');
   }
 }
 
@@ -307,7 +338,13 @@ function zipla(c, gecikme = 0) {
   }
 }
 
+function cilginLaf(buyuk) {
+  if (S.mod === 'hamam') return sec(buyuk ? ['YANDIIIM!', 'TUTMAYIN BENİ!', 'Oleeey!', 'Sıcak sıcak!', 'Hamam benim!'] : ['Yandım!', 'Hoppaaa!', 'Oley!', 'Uuuu!', '🤪']);
+  return sec(buyuk ? ['GIDAAAK!!!', 'ÇILDIRDIM!', 'TUTMAYIN BENİ!', 'Hoppaaa!', 'Bok bok BOOOK!'] : ['GIDAAAK!', 'AAAAA!', 'Bok bok!', 'Wiiiii!', '🤪']);
+}
+
 function cildir(c, sure) {
+  if (c.durum === 'tellak' || c.durum === 'yatiyor') { c.rolSure += sure; return; }
   if (c.durum === 'kavga' || c.durum === 'ko') { c.bekleyenCilgin = Math.max(c.bekleyenCilgin || 0, sure); return; }
   c.durum = 'cilgin';
   c.cilgin = Math.max(c.cilgin, sure);
@@ -332,9 +369,10 @@ function yumurtla(c) {
 function kavgaIstegi(c, hedef) {
   if (c.kavgaBekleme > 0) { balon(c, 'Biraz soluklanayım...'); return; }
   if (c.durum === 'kavga' || c.durum === 'ko') return;
+  if (c.durum === 'tellak' || c.durum === 'yatiyor') { balon(c, c.durum === 'tellak' ? 'Şimdi işim var! 🧽' : 'Kalkamam, yatıyorum! 😌'); return; }
   if (S.kavgalar.length >= 5) { balon(c, 'Sıradayım! 🥊'); return; }
   let rakip = hedef;
-  if (!rakip || rakip.durum === 'kavga' || rakip.durum === 'ko') {
+  if (!rakip || !['halka', 'cilgin'].includes(rakip.durum)) {
     const adaylar = S.tavuklar.filter((t) => t !== c && (t.durum === 'halka' || t.durum === 'cilgin'));
     rakip = sec(adaylar);
   }
@@ -428,50 +466,37 @@ function kavgaBitir(k) {
   S.kavgalar.splice(S.kavgalar.indexOf(k), 1);
 }
 
-// ------------------------------------------------------------------ Hamamcan
-// Hamam Disko'nun yıldızı: bıyıklı, peştemallı, keseli DJ horoz.
-// Masada müzik çalar; ara sıra aşağı inip birini keseler ya da tasla su atar.
-const HAMAMCAN = { renk: ['#f3e6d3', '#d9c3a3'], kiyafet: 1, yazma: '#000', altinTac: false, biyik: true, kese: true };
-const HC_DJ = { x: MERKEZ.x, y: MERKEZ.y - 5 };
+// ------------------------------------------------------------------ Hamamcan ve hamam rolleri
+// Hamamcan: DJ kabininde çalan bıyıklı, göbekli, peştemallı hamam ağası.
+// İzleyiciler hediyeyle göbek taşına yatabilir ya da tellak olup başkalarını keseleyebilir.
+const HAMAMCAN = { ad: 'Hamamcan', altinTac: false, durum: 'dj', insan: { ten: '#e0ac69', sac: 0, sacRenk: '#2b1d14', biyik: 2, gobek: 27, pest: ['#c92a2a', '#fff'], kil: true, havlu: 2 } };
+const HC_DJ = { x: 360, y: 650 };
+const YATAKLAR = [{ dx: -72, dy: -24 }, { dx: 72, dy: -24 }, { dx: -72, dy: 24 }, { dx: 72, dy: 24 }];
+const MAKS_TELLAK = 3;
+const YATMA_JETON = 5, TELLAK_JETON = 30;
+const YATMA_SURE = 60, TELLAK_SURE = 120;
 
 function hcBalon(metin, sure = 2.5) { S.hc.balon = { metin: kisalt(metin, 28), sure }; }
 
 function hamamcanSifirla() {
-  const h = S.hc;
-  if (h.hedef && h.hedef.durum === 'yikaniyor') h.hedef.durum = 'halka';
-  Object.assign(h, { x: HC_DJ.x, y: HC_DJ.y, durum: 'dj', hedef: null, tur: null, t: 0, sonraki: rnd(12, 20) });
+  Object.assign(S.hc, { x: HC_DJ.x, y: HC_DJ.y, durum: 'dj', hedef: null, t: 0, sonraki: rnd(12, 20) });
 }
 
-function hamamcanIs(c, tur) {
+// Hamamcan kabinden tasla soğuk su atar
+function hamamcanIs(c) {
   const h = S.hc;
   if (S.mod !== 'hamam' || h.durum !== 'dj') return false;
   if (!c || !['halka', 'cilgin', 'zafer'].includes(c.durum)) return false;
-  h.hedef = c; h.t = 0;
-  h.tur = tur || sec(['kese', 'kese', 'tas']);
-  if (h.tur === 'kese') {
-    h.durum = 'gidiyor';
-    hcBalon(sec([`Gel bakalım ${kisalt(c.ad, 10)}!`, 'Kese zamanı!', 'Sırtını bir keseleyeyim!', 'Kirlerin dökülsün!']));
-  } else {
-    h.durum = 'tas';
-    hcBalon(sec([`Al ${kisalt(c.ad, 10)}, serinle!`, 'Tas geliyor!', 'Soğuk su iyi gelir!']));
-  }
+  h.hedef = c; h.t = 0; h.durum = 'tas';
+  hcBalon(sec([`Al ${kisalt(c.ad, 10)}, serinle!`, 'Tas geliyor!', 'Soğuk su iyi gelir!']));
   return true;
 }
 
 function hamamcanGuncelle(dt) {
   const h = S.hc;
   if (h.balon) { h.balon.sure -= dt; if (h.balon.sure <= 0) h.balon = null; }
-  h.yuruyor = false;
-  const yuru = (tx, ty) => {
-    const dx = tx - h.x, dy = ty - h.y, d = Math.hypot(dx, dy);
-    if (d < 6) return true;
-    const a = Math.min(d, 230 * dt);
-    h.x += (dx / d) * a; h.y += (dy / d) * a; h.yuruyor = true;
-    return false;
-  };
   const c = h.hedef;
   const hedefGitti = !c || !S.tavuklar.includes(c);
-
   if (h.durum === 'dj') {
     h.sonraki -= dt;
     if (h.sonraki <= 0) {
@@ -479,96 +504,213 @@ function hamamcanGuncelle(dt) {
       const adaylar = S.tavuklar.filter((t) => t.durum === 'halka');
       if (adaylar.length) hamamcanIs(sec(adaylar));
     }
-    if (!h.balon && Math.random() < dt * 0.07) hcBalon(sec(['Kurnalar titresin!', 'Hamamcan sahnede!', 'Beğenileri basın!', 'Göbek taşı yanıyor!', 'Hediye gelsin köpük gelsin!']));
-  } else if (h.durum === 'gidiyor') {
-    if (hedefGitti || !['halka', 'cilgin', 'zafer', 'yikaniyor'].includes(c.durum)) { h.durum = 'donuyor'; return; }
-    // yaklaşınca tavuk kaçmasın diye yerinde dursun
-    if (c.durum !== 'yikaniyor' && Math.hypot(h.x - c.x, h.y - c.y) < 110) { c.durum = 'yikaniyor'; c.cilgin = 0; }
-    const yan = c.x > W - 140 ? -1 : 1;
-    if (yuru(c.x + 44 * yan, c.y + 3)) { h.durum = 'kese'; h.t = 0; }
-  } else if (h.durum === 'kese') {
-    h.t += dt;
-    if (hedefGitti || c.durum !== 'yikaniyor') { h.durum = 'donuyor'; return; }
-    if (Math.random() < dt * 14) parcacik('kopuk', c.x + rnd(-24, 24), c.y - rnd(20, 70));
-    if (Math.random() < dt * 5) ses.kese();
-    if (Math.random() < dt * 3) parcacik('yazi', c.x + rnd(-30, 30), c.y - rnd(80, 110), { metin: sec(['FIŞ FIŞ', 'OOH!', 'HIŞ!', 'GIDIK!']), renk: '#a5d8ff', boyut: 22 });
-    if (h.t > 3.2) {
-      c.durum = 'halka';
-      c.temiz = 8;
-      balon(c, sec(['Mis gibi oldum! ✨', 'Tüylerim parlıyor!', 'Sağ ol Hamamcan!', 'Gıdıklandım!']), 2.5);
-      zipla(c);
-      puanEkle(c, 5);
-      parcacik('yazi', c.x, c.y - 100, { metin: '✨ +5', renk: '#fff', boyut: 26 });
-      akisEkle(`🧼 Hamamcan ${kisalt(c.ad, 14)} tavuğunu keseledi!`, '#a5d8ff');
-      hcBalon(sec(['Sıradaki!', 'Pırıl pırıl!', 'Hamamcan farkı!']));
-      h.durum = 'donuyor';
+    if (!h.balon && Math.random() < dt * 0.07) {
+      hcBalon(sec(['Kurnalar titresin!', 'Hamamcan sahnede!', 'Beğenileri basın!', `Tellak ol: ${TELLAK_JETON} jeton!`, `Göbek taşı: ${YATMA_JETON} jeton!`, 'Hediye gelsin köpük gelsin!']));
     }
   } else if (h.durum === 'tas') {
     const once = h.t;
     h.t += dt;
     if (once < 0.45 && h.t >= 0.45 && !hedefGitti) {
-      // tas suyu yay çizerek hedefe gider
-      const sx = h.x + 25, sy = h.y - 110, tx = c.x, ty = c.y - 50, uc = 0.6;
+      const sx = h.x + 34, sy = h.y - 160, tx = c.x, ty = c.y - 60, uc = 0.65;
       for (let i = 0; i < 45; i++) {
         const vx = (tx - sx) / uc + rnd(-25, 25), vy = (ty - sy) / uc - 0.5 * 900 * uc + rnd(-30, 30);
         parcacik('su', sx, sy, { vx, vy });
       }
       ses.su();
     }
-    if (once < 1.05 && h.t >= 1.05 && !hedefGitti) {
-      for (let i = 0; i < 16; i++) parcacik('su', c.x, c.y - 40, { vx: rnd(-150, 150), vy: rnd(-300, -80) });
+    if (once < 1.1 && h.t >= 1.1 && !hedefGitti && ['halka', 'cilgin', 'zafer'].includes(c.durum)) {
+      for (let i = 0; i < 16; i++) parcacik('su', c.x, c.y - 50, { vx: rnd(-150, 150), vy: rnd(-300, -80) });
       balon(c, sec(['Buz gibiii! 🥶', 'AAAH SOĞUK!', 'Islandım!']), 2);
       cildir(c, 2.5);
       puanEkle(c, 3);
-      akisEkle(`💦 Hamamcan ${kisalt(c.ad, 14)} tavuğuna tas attı!`, '#74c0fc');
+      akisEkle(`💦 Hamamcan ${kisalt(c.ad, 14)} kişisine tas attı!`, '#74c0fc');
     }
     if (h.t > 1.8) { h.durum = 'dj'; h.hedef = null; }
-  } else if (h.durum === 'donuyor') {
-    if (!hedefGitti && c.durum === 'yikaniyor') c.durum = 'halka';
-    if (yuru(HC_DJ.x, HC_DJ.y)) { h.durum = 'dj'; h.hedef = null; }
   }
 }
 
 function hamamcanPoz() {
-  const h = S.hc;
-  const p = { bob: 0, titreme: 0, egim: 0, kanatSol: 0.2, kanatSag: 0.2, bacak: 0, goz: 'normal', yatik: false, gozluk: false, donus: 0, agiz: false };
-  if (h.yuruyor) {
-    p.bacak = Math.sin(S.zaman * 16) * 6;
-    p.bob = Math.abs(Math.sin(S.zaman * 8)) * 4;
-    p.egim = Math.sin(S.zaman * 8) * 0.08;
-  }
-  if (h.durum === 'kese') {
-    p.kanatSag = -0.6 + Math.sin(S.zaman * 28) * 0.7;
-    p.titreme = Math.sin(S.zaman * 28) * 2;
-    p.goz = 'kizgin'; p.agiz = true;
-  } else if (h.durum === 'tas') {
-    p.kanatSag = h.t < 0.45 ? -1.6 : 0.6;
-    p.agiz = true;
-  }
+  const t = S.dansZamani, h = S.hc;
+  const p = { bob: Math.abs(Math.sin(t * 6.2)) * 4, titreme: 0, egim: Math.sin(t * 3.1) * 0.08, kanatSol: 0.5 + Math.sin(t * 12) * 0.25, kanatSag: -1.3 + Math.sin(t * 6.2) * 0.4, bacak: 0, goz: 'normal', yatik: false, gozluk: true, donus: 0, agiz: Math.sin(t * 6.2) > 0.3 };
+  if (h.durum === 'tas') { p.kanatSag = h.t < 0.45 ? -1.7 : 0.4; p.agiz = true; p.gozluk = false; p.goz = 'mutlu'; }
   return p;
 }
 
 function hamamcanCiz() {
-  const h = S.hc;
-  const s = derinlikOlcek(h.y) * 1.35;
-  tavukCiz(ctx, HAMAMCAN, h.x, h.y, s, hamamcanPoz());
-  if (h.durum === 'tas' && h.t < 0.6) {
-    // pirinç hamam tası
+  const h = S.hc, x = h.x, y = h.y, s = 1.3;
+  const p = hamamcanPoz();
+  insanCiz(ctx, HAMAMCAN, x, y, s, p);
+  // kulaklık
+  const hy = y - (86 + p.bob) * s;
+  ctx.strokeStyle = '#111'; ctx.lineWidth = 5;
+  ctx.beginPath(); ctx.arc(x, hy, 16 * s, Math.PI * 1.05, Math.PI * 1.95); ctx.stroke();
+  ctx.fillStyle = '#e64980';
+  ctx.beginPath(); ctx.ellipse(x - 16 * s, hy + 3, 6, 10, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(x + 16 * s, hy + 3, 6, 10, 0, 0, Math.PI * 2); ctx.fill();
+  if (h.durum === 'tas' && h.t < 0.5) {
     ctx.fillStyle = '#d4a017';
-    ctx.beginPath(); ctx.ellipse(h.x + 34 * s, h.y - 78 * s, 13 * s, 6 * s, -0.4, 0, Math.PI); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(x + 36, y - 162, 16, 7, -0.3, 0, Math.PI); ctx.fill();
+  }
+  // DJ masası
+  const neon = `hsl(${(S.zaman * 120) % 360},90%,62%)`;
+  ctx.fillStyle = '#1b1525';
+  ctx.beginPath(); ctx.roundRect(x - 88, y - 56, 176, 56, 8); ctx.fill();
+  ctx.strokeStyle = neon; ctx.lineWidth = 3; ctx.stroke();
+  ctx.fillStyle = '#343a40';
+  for (const dx of [-50, 50]) {
+    ctx.beginPath(); ctx.ellipse(x + dx, y - 56, 26, 8, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#868e96'; ctx.beginPath(); ctx.ellipse(x + dx, y - 56, 4, 1.6, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#343a40';
+  }
+  ctx.font = '900 18px Impact, "Arial Black", sans-serif'; ctx.textAlign = 'center';
+  ctx.fillStyle = neon; ctx.fillText('HAMAMCAN', x, y - 22);
+  for (let i = 0; i < 9; i++) {
+    const yuk = Math.abs(Math.sin(S.zaman * 8 + i * 0.9)) * 10 + 2;
+    ctx.fillRect(x - 40 + i * 9, y - 6 - yuk, 6, yuk);
   }
 }
 
 function hamamcanEtiket() {
   const h = S.hc;
-  const dj = h.durum === 'dj';
-  const s = dj ? 1.35 : derinlikOlcek(h.y) * 1.35;
-  const y = (dj ? h.y - 10 : h.y) - 100 * s;
-  etiket(ctx, '🧼 Hamamcan', h.x, y, '#f783ac', 16);
+  const y = h.y - 170;
+  etiket(ctx, '🎧 Hamamcan', h.x, y, '#f783ac', 16);
   if (h.balon) {
     ctx.globalAlpha = Math.min(1, h.balon.sure * 3);
     balonCiz(h.balon.metin, h.x, y - 20);
     ctx.globalAlpha = 1;
+  }
+}
+
+// ---- roller
+function rolBitir(c, laf) {
+  if (c.tis && c.tis.hedef && c.tis.hedef.durum === 'yikaniyor') c.tis.hedef.durum = 'halka';
+  c.durum = 'halka'; c.tis = null; c.yatak = null; c.yatti = false; c.rolSure = 0;
+  if (laf) balon(c, laf, 2.5);
+}
+
+function rolUygula(c, rol) {
+  if (S.mod !== 'hamam') return;
+  if (c.durum === 'kavga' || c.durum === 'ko' || c.durum === 'zafer') { c.bekleyenRol = rol; return; }
+  if (rol === 'yat') gobekTasinaYatir(c); else tellakYap(c);
+}
+
+function gobekTasinaYatir(c) {
+  if (c.durum === 'yatiyor') { c.rolSure += YATMA_SURE; balon(c, 'Biraz daha yatayım! 😌'); return; }
+  if (c.durum === 'tellak') rolBitir(c);
+  let bos = YATAKLAR.findIndex((_, i) => !S.tavuklar.some((t) => t.durum === 'yatiyor' && t.yatak === i));
+  if (bos < 0) {
+    const eski = S.tavuklar.filter((t) => t.durum === 'yatiyor').sort((a, b) => a.rolSure - b.rolSure)[0];
+    bos = eski.yatak;
+    rolBitir(eski, 'Hop! Yerimi kaptılar!');
+  }
+  c.durum = 'yatiyor'; c.yatak = bos; c.rolSure = YATMA_SURE; c.cilgin = 0; c.yatti = false;
+  balon(c, sec(['Oh be! Göbek taşı sıcacık 😌', 'Tellak! Beni keseleyin!', 'Mis gibi...', 'Burası benim!']), 3);
+  akisEkle(`🛁 ${kisalt(c.ad, 14)} göbek taşına yattı!`, '#ffc078');
+}
+
+function tellakYap(c) {
+  if (c.durum === 'tellak') { c.rolSure += TELLAK_SURE; balon(c, 'Mesai uzadı! 🧽'); return; }
+  if (c.durum === 'yatiyor' || c.durum === 'yikaniyor') rolBitir(c);
+  const tellaklar = S.tavuklar.filter((t) => t.durum === 'tellak');
+  if (tellaklar.length >= MAKS_TELLAK) rolBitir(tellaklar.sort((a, b) => a.rolSure - b.rolSure)[0], 'Keseyi devrettim!');
+  c.durum = 'tellak'; c.rolSure = TELLAK_SURE; c.cilgin = 0;
+  c.tis = { hedef: null, faz: 'bekle', t: 0.8 };
+  balon(c, sec(['Keseyi kaptım! 🧽', 'Sıradaki gelsin!', 'Tellak geldi!']), 3);
+  mansetGoster('YENİ TELLAK!', `${kisalt(c.ad, 18)} keseyi kuşandı 🧽`, '#ffc078');
+  akisEkle(`🧽 ${kisalt(c.ad, 14)} tellak oldu!`, '#ffc078');
+}
+
+function keseIste(c) {
+  if (c.durum === 'tellak') { balon(c, 'Kese bende zaten! 🧽'); return; }
+  if (!S.tavuklar.some((t) => t.durum === 'tellak')) { balon(c, `Tellak yok! ${TELLAK_JETON} jeton at, tellak ol 🧽`, 3); return; }
+  c.keseIstiyor = S.zaman + 40;
+  balon(c, sec(['Tellak! Beni de keseleee!', 'Sırtım kaşınıyor!', 'Bana da kese!']), 2.5);
+}
+
+function yatakYeri(i) {
+  const y = YATAKLAR[i];
+  return { x: MERKEZ.x + y.dx, y: MERKEZ.y + y.dy };
+}
+
+function yatanGuncelle(c, dt) {
+  c.rolSure -= dt;
+  if (c.rolSure <= 0) { rolBitir(c, sec(['Oh, bayram ettim!', 'Tertemiz oldum!', 'Yine gelirim!'])); return; }
+  const yer = yatakYeri(c.yatak);
+  const s = derinlikOlcek(yer.y);
+  const tx = yer.x + 48 * s, ty = yer.y + 10;
+  const dx = tx - c.x, dy = ty - c.y, d = Math.hypot(dx, dy);
+  if (!c.yatti && d > 6) {
+    const a = Math.min(d, 300 * dt);
+    c.x += (dx / d) * a; c.y += (dy / d) * a; c.yuruyor = true;
+  } else {
+    c.yatti = true; c.x = tx; c.y = ty; c.yuruyor = false;
+  }
+  if (c.yatti && !c.balon && Math.random() < dt * 0.12) balon(c, sec(['Zzz...', 'Ooh sıcacık...', 'Tellak nerde?', 'Kese kese! 🧽', 'Hamamcan çal!']), 2);
+  if (c.yatti && Math.random() < dt * 0.6) parcacik('buhar', c.x - 45 * s, c.y - 20);
+}
+
+function tellakGuncelle(c, dt) {
+  c.rolSure -= dt;
+  if (c.rolSure <= 0) { rolBitir(c, 'Mesaim bitti! 🧽'); return; }
+  const is = c.tis;
+  const h = is.hedef;
+  c.yuruyor = false;
+  const yuru = (tx, ty) => {
+    const dx = tx - c.x, dy = ty - c.y, d = Math.hypot(dx, dy);
+    if (d < 6) return true;
+    const a = Math.min(d, 240 * dt);
+    c.x += (dx / d) * a; c.y += (dy / d) * a; c.yuruyor = true;
+    return false;
+  };
+  if (is.faz === 'bekle') {
+    is.t -= dt;
+    if (is.t <= 0) {
+      const mesgul = new Set(S.tavuklar.filter((t) => t.durum === 'tellak' && t !== c && t.tis && t.tis.hedef).map((t) => t.tis.hedef));
+      const uygun = (t) => t !== c && !mesgul.has(t);
+      // önce göbek taşında yatanlar, sonra "kese" yazanlar, sonra rastgele biri
+      let aday = S.tavuklar.filter((t) => t.durum === 'yatiyor' && t.yatti && uygun(t) && (t.sonKese || -99) < S.zaman - 6);
+      if (!aday.length) aday = S.tavuklar.filter((t) => t.keseIstiyor > S.zaman && t.durum === 'halka' && uygun(t));
+      if (!aday.length) aday = S.tavuklar.filter((t) => t.durum === 'halka' && uygun(t));
+      if (aday.length) {
+        is.hedef = sec(aday); is.faz = 'git';
+        if (Math.random() < 0.6) balon(c, sec([`Gel ${kisalt(is.hedef.ad, 10)}!`, 'Kese zamanı!', 'Sırtını ver bakalım!']), 2);
+      } else is.t = 1.5;
+    }
+    return;
+  }
+  const gecerli = h && S.tavuklar.includes(h) && (h.durum === 'yatiyor' || h.durum === 'yikaniyor' || (is.faz === 'git' && h.durum === 'halka'));
+  if (!gecerli) {
+    if (h && h.durum === 'yikaniyor') h.durum = 'halka';
+    is.faz = 'bekle'; is.t = 0.8; is.hedef = null;
+    return;
+  }
+  let tx, ty, gx;
+  if (h.durum === 'yatiyor') {
+    const hs = derinlikOlcek(h.y);
+    gx = h.x - 48 * hs; tx = gx + 6; ty = h.y - 24;   // taşın arkasında, yatanın başında durur
+  } else {
+    const yan = h.x > W - 140 ? -1 : 1;
+    gx = h.x; tx = h.x + 46 * yan; ty = h.y + 3;
+    if (h.durum === 'halka' && Math.hypot(c.x - h.x, c.y - h.y) < 120) { h.durum = 'yikaniyor'; h.cilgin = 0; }
+  }
+  if (is.faz === 'git') {
+    if (yuru(tx, ty)) { is.faz = 'kese'; is.t = 0; }
+  } else if (is.faz === 'kese') {
+    c.x = tx; c.y = ty;
+    is.t += dt;
+    h.keseAn = S.zaman;
+    if (Math.random() < dt * 14) parcacik('kopuk', gx + rnd(-28, 28), h.y - rnd(15, 70));
+    if (Math.random() < dt * 5) ses.kese();
+    if (Math.random() < dt * 2.5) parcacik('yazi', gx + rnd(-30, 30), h.y - rnd(80, 110), { metin: sec(['FIŞ FIŞ', 'OOH!', 'HIŞ!', 'AAH!', 'KİR DÖKÜLDÜ!']), renk: '#a5d8ff', boyut: 22 });
+    if (is.t > 3.5) {
+      h.temiz = 8; h.sonKese = S.zaman; h.keseIstiyor = 0;
+      if (h.durum === 'yikaniyor') { h.durum = 'halka'; zipla(h); }
+      balon(h, sec(['Mis gibi oldum! ✨', 'Kirim döküldü!', 'Eline sağlık usta!', 'Gıdıklandım! 😂']), 2.5);
+      puanEkle(c, 5); puanEkle(h, 3);
+      parcacik('yazi', c.x, c.y - 125, { metin: '🧽 +5', renk: '#fff', boyut: 24 });
+      akisEkle(`🧽 Tellak ${kisalt(c.ad, 12)}, ${kisalt(h.ad, 12)} kişisini keseledi!`, '#a5d8ff');
+      is.faz = 'bekle'; is.t = rnd(1, 2.5); is.hedef = null;
+    }
   }
 }
 
@@ -592,6 +734,8 @@ function guncelle(dt) {
     if (c.yumurtliyor > 0) c.yumurtliyor -= dt;
     if (c.ziplama > 0) c.ziplama -= dt;
     if (c.balon) { c.balon.sure -= dt; if (c.balon.sure <= 0) c.balon = null; }
+    if (c.durum === 'tellak') { tellakGuncelle(c, dt); continue; }
+    if (c.durum === 'yatiyor') { yatanGuncelle(c, dt); continue; }
     if (c.durum === 'yikaniyor') { c.yuruyor = false; continue; }
 
     let tx = c.hx, ty = c.hy;
@@ -605,7 +749,7 @@ function guncelle(dt) {
         c.vx = Math.cos(a) * hizC; c.vy = Math.sin(a) * hizC * 0.6;
         if (Math.random() < 0.25) c.donus = 0.5;
         if (Math.random() < 0.3) zipla(c);
-        if (Math.random() < 0.15) balon(c, sec(['GIDAAAK!', 'AAAAA!', 'Bok bok!', 'Wiiiii!', '🤪']), 1.2);
+        if (Math.random() < 0.15) balon(c, cilginLaf(false), 1.2);
       }
       c.x += c.vx * dt; c.y += c.vy * dt;
       // alanın içinde tut
@@ -627,6 +771,7 @@ function guncelle(dt) {
         c.durum = 'halka';
         balon(c, sec(['Neredeyim ben?', 'Başım dönüyor...', 'Rövanş istiyorum!']), 2);
         if (c.bekleyenCilgin) { cildir(c, c.bekleyenCilgin); c.bekleyenCilgin = 0; }
+        if (c.bekleyenRol) { const r = c.bekleyenRol; c.bekleyenRol = null; rolUygula(c, r); }
       }
       continue;
     }
@@ -636,6 +781,7 @@ function guncelle(dt) {
       if (c.zafer <= 0) {
         c.durum = 'halka';
         if (c.bekleyenCilgin) { cildir(c, c.bekleyenCilgin); c.bekleyenCilgin = 0; }
+        if (c.bekleyenRol) { const r = c.bekleyenRol; c.bekleyenRol = null; rolUygula(c, r); }
       }
       continue;
     }
@@ -686,7 +832,7 @@ function guncelle(dt) {
   if (S.mod === 'hamam') hamamcanGuncelle(dt);
   if (S.kopuk > 0) {
     S.kopuk -= dt;
-    for (let i = 0; i < 3; i++) if (Math.random() < dt * 30) parcacik('kopuk', rnd(20, W - 20), rnd(680, 1180));
+    if (Math.random() < dt * 22) parcacik('kopuk', rnd(20, W - 20), rnd(700, 1180));
   }
   // hamamda buhar
   if (S.mod === 'hamam' && Math.random() < dt * 6) parcacik('buhar', rnd(0, W), rnd(900, 1250));
@@ -711,6 +857,10 @@ function guncelle(dt) {
 
 // ------------------------------------------------------------------ parçacıklar
 function parcacik(tur, x, y, ek = {}) {
+  if (tur === 'tuy' && S.mod === 'hamam') {
+    tur = 'su';
+    if (ek.vx === undefined) ek = { ...ek, vx: rnd(-150, 150), vy: rnd(-320, -80) };
+  }
   const p = { tur, x, y, vx: 0, vy: 0, omur: 1, maks: 1, a: rnd(0, Math.PI * 2), va: 0, ...ek };
   switch (tur) {
     case 'tuy': p.vx = rnd(-160, 160); p.vy = rnd(-260, -60); p.omur = p.maks = rnd(1.5, 2.6); p.va = rnd(-6, 6); break;
@@ -780,6 +930,8 @@ function modDegistir(m) {
   mansetGoster(m === 'horon' ? 'TAVUK HORONU' : 'HAMAMCAN DİSKO', m === 'horon' ? 'Yaylada horon başlıyor!' : 'Kurnalar titresin! 🪩', m === 'horon' ? '#9be15d' : '#f783ac');
   S.parcaciklar = S.parcaciklar.filter((p) => p.tur !== 'buhar' && p.tur !== 'kopuk');
   S.kopuk = 0;
+  S.tavuklar.forEach((c) => { if (['tellak', 'yatiyor', 'yikaniyor'].includes(c.durum)) rolBitir(c); });
+  MERKEZ.y = HALKALAR[m].y;
   hamamcanSifirla();
   if (m === 'hamam') hcBalon('Hamamcan geldi, disko başladı!', 3);
 }
@@ -879,8 +1031,14 @@ function hamamCiz(g) {
   gr = g.createLinearGradient(0, 400, 0, 660);
   gr.addColorStop(0, '#e9dfd0'); gr.addColorStop(1, '#cfc2ad');
   g.fillStyle = gr; g.fillRect(0, 430, W, 230);
-  for (let i = 0; i < 4; i++) {
-    const x = 90 + i * 180;
+  // DJ kabini kemeri (ortada)
+  g.fillStyle = '#b9a98f';
+  g.beginPath(); g.moveTo(268, 655); g.lineTo(268, 525); g.arc(360, 525, 92, Math.PI, 0); g.lineTo(452, 655); g.fill();
+  const kab = g.createLinearGradient(0, 440, 0, 655);
+  kab.addColorStop(0, '#3b1f5c'); kab.addColorStop(1, '#1f1430');
+  g.fillStyle = kab;
+  g.beginPath(); g.moveTo(280, 655); g.lineTo(280, 530); g.arc(360, 530, 80, Math.PI, 0); g.lineTo(440, 655); g.fill();
+  for (const x of [70, 195, 525, 650]) {
     g.fillStyle = '#b9a98f';
     g.beginPath(); g.moveTo(x - 60, 650); g.lineTo(x - 60, 520); g.arc(x, 520, 60, Math.PI, 0); g.lineTo(x + 60, 650); g.fill();
     g.fillStyle = '#8e7d66';
@@ -903,10 +1061,12 @@ function hamamCiz(g) {
     for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2 + Math.PI / 8; g.lineTo(MERKEZ.x + Math.cos(a) * rx, MERKEZ.y + dy + Math.sin(a) * ry); }
     g.closePath(); g.fill();
   };
-  gt(135, 68, 22, '#b3a690');
-  g.fillStyle = '#c7bba5'; g.fillRect(MERKEZ.x - 125, MERKEZ.y, 250, 22);
-  gt(135, 68, 0, '#efe8dc');
-  gt(110, 52, 0, '#e4dccd');
+  gt(172, 76, 24, '#b3a690');
+  g.fillStyle = '#c7bba5'; g.fillRect(MERKEZ.x - 159, MERKEZ.y, 318, 24);
+  gt(172, 76, 0, '#efe8dc');
+  gt(140, 58, 0, '#e4dccd');
+  g.strokeStyle = 'rgba(150,130,100,0.35)'; g.lineWidth = 1.5;
+  for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2 + Math.PI / 8; g.beginPath(); g.moveTo(MERKEZ.x + Math.cos(a) * 140, MERKEZ.y + Math.sin(a) * 58); g.lineTo(MERKEZ.x + Math.cos(a) * 172, MERKEZ.y + Math.sin(a) * 76); g.stroke(); }
 }
 
 function yildizSekli(g, x, y, r1, r2, n, renk) {
@@ -1081,6 +1241,161 @@ function tavukCiz(g, c, x, y, s, p) {
   g.restore();
 }
 
+function karakterCiz(g, c, x, y, s, p) {
+  if (S.mod === 'hamam') insanCiz(g, c, x, y, s, p); else tavukCiz(g, c, x, y, s, p);
+}
+
+// Peştemallı adam (önden görünüm). Ayak tabanı (0,0), boy ~110 birim.
+// p.kanatSol/kanatSag kol açısıdır: 0 yatay, + aşağı, - yukarı.
+function insanCiz(g, c, x, y, s, p) {
+  const k = c.insan;
+  const tellak = c.durum === 'tellak';
+  g.save();
+  g.translate(x, y);
+  g.scale(s, s);
+  g.fillStyle = 'rgba(0,0,0,0.22)';
+  g.beginPath(); g.ellipse(p.yatik ? -45 : 0, 0, p.yatik ? 58 : 22, 7, 0, 0, Math.PI * 2); g.fill();
+  if (p.yatik) { g.translate(-4, -10); g.rotate(-Math.PI / 2); g.translate(0, 10); }
+  g.translate(0, -p.bob);
+  if (p.donus) g.scale(Math.cos(p.donus * Math.PI * 4), 1);
+  const ten = k.ten;
+  const cizgi = 'rgba(0,0,0,0.18)';
+
+  // bacaklar ve nalınlar
+  g.lineCap = 'round';
+  const bacak = (bx, kalk) => {
+    const ux = bx + kalk * 0.3, uy = -4 - kalk;
+    g.strokeStyle = ten; g.lineWidth = 8;
+    g.beginPath(); g.moveTo(bx, -26); g.lineTo(ux, uy); g.stroke();
+    g.fillStyle = '#8b5a2b'; g.beginPath(); g.roundRect(ux - 8, uy - 1, 16, 6, 2); g.fill();
+    g.fillStyle = '#5c3a1a'; g.fillRect(ux - 6, uy + 5, 3, 3); g.fillRect(ux + 3, uy + 5, 3, 3);
+  };
+  bacak(-8, p.bacak > 0 ? p.bacak : 0);
+  bacak(8, p.bacak < 0 ? -p.bacak : 0);
+
+  g.save();
+  g.translate(p.titreme, 0);
+  g.rotate(p.egim);
+
+  // gövde: göğüs + göbek
+  const gb = k.gobek;
+  g.fillStyle = ten; g.strokeStyle = cizgi; g.lineWidth = 1.5;
+  g.beginPath(); g.roundRect(-16, -74, 32, 26, 10); g.fill();
+  g.beginPath(); g.ellipse(0, -48, gb, 19, 0, 0, Math.PI * 2); g.fill(); g.stroke();
+  g.fillStyle = 'rgba(0,0,0,0.25)'; g.beginPath(); g.arc(0, -46, 1.6, 0, Math.PI * 2); g.fill();
+  if (k.kil) {
+    g.strokeStyle = k.sacRenk; g.lineWidth = 1.2;
+    for (const [a, b] of [[-6, -66], [-2, -64], [3, -66], [6, -63], [0, -60]]) { g.beginPath(); g.moveTo(a, b); g.lineTo(a + 1.5, b - 3); g.stroke(); }
+  }
+
+  // peştemal
+  g.save();
+  g.beginPath();
+  g.moveTo(-gb - 1, -42); g.quadraticCurveTo(0, -36, gb + 1, -42);
+  g.lineTo(gb - 3, -18); g.quadraticCurveTo(0, -14, -gb + 3, -18); g.closePath();
+  g.fillStyle = k.pest[0]; g.fill();
+  g.clip();
+  g.fillStyle = k.pest[1];
+  for (const yy of [-36, -29, -22]) g.fillRect(-gb - 2, yy, gb * 2 + 4, 2.5);
+  g.globalAlpha = 0.25;
+  for (let xx = -gb; xx < gb; xx += 7) g.fillRect(xx, -44, 2, 30);
+  g.restore();
+  g.fillStyle = k.pest[0];
+  g.beginPath(); g.moveTo(gb - 7, -40); g.lineTo(gb - 1, -40); g.lineTo(gb - 3, -28); g.closePath(); g.fill();
+
+  // kollar
+  const kol = (yan, aci) => {
+    const a = aci < 0 ? aci : 0.45 + aci * 1.4;
+    g.save(); g.translate(yan * 15, -68); g.rotate(yan * a);
+    g.strokeStyle = ten; g.lineWidth = 7.5; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(0, 0); g.lineTo(yan * 24, 0); g.stroke();
+    if (tellak && yan === 1) {
+      g.fillStyle = '#c0392b'; g.beginPath(); g.roundRect(20, -8, 16, 16, 4); g.fill();
+      g.strokeStyle = 'rgba(255,255,255,0.5)'; g.lineWidth = 1;
+      for (let i = 0; i < 4; i++) { g.beginPath(); g.moveTo(22, -5 + i * 4); g.lineTo(34, -5 + i * 4); g.stroke(); }
+    } else {
+      g.fillStyle = ten; g.beginPath(); g.arc(yan * 26, 0, 4.8, 0, Math.PI * 2); g.fill();
+    }
+    g.restore();
+  };
+  kol(-1, p.kanatSol); kol(1, p.kanatSag);
+
+  // omuzda havlu (tellakta hep var)
+  if (k.havlu === 2 || tellak) {
+    g.fillStyle = '#f8f9fa';
+    g.beginPath(); g.roundRect(-19, -78, 11, 34, 3); g.fill();
+    g.fillStyle = tellak ? '#c0392b' : '#74c0fc'; g.fillRect(-19, -52, 11, 3);
+  }
+
+  // kafa
+  g.fillStyle = ten;
+  g.beginPath(); g.arc(-14, -86, 3.6, 0, Math.PI * 2); g.arc(14, -86, 3.6, 0, Math.PI * 2); g.fill();
+  g.beginPath(); g.arc(0, -87, 14, 0, Math.PI * 2); g.fill();
+  g.strokeStyle = cizgi; g.lineWidth = 1.5; g.stroke();
+
+  // saç
+  g.fillStyle = k.sacRenk;
+  if (k.sac === 0) {
+    g.beginPath(); g.ellipse(-12, -88, 3, 6, 0.2, 0, Math.PI * 2); g.ellipse(12, -88, 3, 6, -0.2, 0, Math.PI * 2); g.fill();
+    g.fillStyle = 'rgba(255,255,255,0.35)'; g.beginPath(); g.ellipse(-4, -98, 5, 2.5, -0.3, 0, Math.PI * 2); g.fill();
+  } else if (k.sac === 1) {
+    g.beginPath(); g.arc(0, -88, 14.5, Math.PI * 1.03, Math.PI * 1.97); g.closePath(); g.fill();
+  } else if (k.sac === 2) {
+    for (let i = -2; i <= 2; i++) { g.beginPath(); g.arc(i * 5.5, -98 + Math.abs(i) * 2, 5.5, 0, Math.PI * 2); g.fill(); }
+  } else {
+    g.beginPath(); g.moveTo(-14, -88); g.quadraticCurveTo(-12, -104, 4, -102); g.quadraticCurveTo(16, -100, 14, -88); g.quadraticCurveTo(4, -97, -14, -88); g.fill();
+  }
+  if (k.havlu === 1 && !tellak) {
+    g.fillStyle = '#f8f9fa';
+    g.beginPath(); g.ellipse(0, -100, 16, 8, 0, 0, Math.PI * 2); g.fill();
+    g.beginPath(); g.ellipse(5, -107, 10, 6, 0.3, 0, Math.PI * 2); g.fill();
+  }
+  if (c.altinTac) {
+    g.fillStyle = '#ffd43b'; g.strokeStyle = '#e8590c'; g.lineWidth = 1.2;
+    g.beginPath(); g.moveTo(-12, -100); g.lineTo(-12, -112); g.lineTo(-6, -106); g.lineTo(0, -116); g.lineTo(6, -106); g.lineTo(12, -112); g.lineTo(12, -100); g.closePath(); g.fill(); g.stroke();
+  }
+
+  // kaşlar, gözler, burun
+  g.strokeStyle = k.sacRenk; g.lineWidth = 2.2;
+  const kizgin = p.goz === 'kizgin';
+  g.beginPath(); g.moveTo(-9, kizgin ? -95 : -94); g.lineTo(-2, kizgin ? -92 : -94); g.moveTo(9, kizgin ? -95 : -94); g.lineTo(2, kizgin ? -92 : -94); g.stroke();
+  gozCiz(g, -5, -88, kizgin ? 'normal' : p.goz);
+  gozCiz(g, 5, -88, kizgin ? 'normal' : p.goz);
+  if (p.gozluk) {
+    g.fillStyle = '#111';
+    g.beginPath(); g.roundRect(-11, -92, 9, 7, 2); g.fill();
+    g.beginPath(); g.roundRect(2, -92, 9, 7, 2); g.fill();
+    g.fillRect(-2, -90, 4, 1.5);
+  }
+  g.fillStyle = 'rgba(0,0,0,0.15)';
+  g.beginPath(); g.ellipse(0, -82, 3, 3.5, 0, 0, Math.PI * 2); g.fill();
+
+  // bıyık ve ağız
+  if (k.biyik === 1) {
+    g.fillStyle = k.sacRenk; g.beginPath(); g.roundRect(-8, -79.5, 16, 4, 2); g.fill();
+  } else if (k.biyik === 2) {
+    g.fillStyle = k.sacRenk;
+    for (const yan of [-1, 1]) {
+      g.beginPath();
+      g.moveTo(0, -80);
+      g.quadraticCurveTo(yan * 9, -82, yan * 14, -77);
+      g.quadraticCurveTo(yan * 18, -73, yan * 17, -80);
+      g.quadraticCurveTo(yan * 19, -71, yan * 11, -74);
+      g.quadraticCurveTo(yan * 6, -75.5, 0, -76.5);
+      g.closePath(); g.fill();
+    }
+  }
+  if (p.agiz) {
+    g.fillStyle = '#5c1f1f'; g.beginPath(); g.ellipse(0, -72, 4, 3, 0, 0, Math.PI * 2); g.fill();
+  } else {
+    g.strokeStyle = '#5c1f1f'; g.lineWidth = 1.5;
+    g.beginPath(); g.arc(0, -76, 4, Math.PI * 0.2, Math.PI * 0.8); g.stroke();
+  }
+
+  g.restore();
+  g.restore();
+}
+
 function gozCiz(g, x, y, tur) {
   if (tur === 'ko') {
     g.strokeStyle = '#222'; g.lineWidth = 2;
@@ -1117,6 +1432,18 @@ function poz(c) {
 
   if (c.durum === 'ko') {
     p.yatik = true; p.goz = 'ko';
+    return p;
+  }
+  if (c.durum === 'yatiyor' && c.yatti) {
+    p.yatik = true; p.goz = 'mutlu';
+    if (S.zaman - (c.keseAn || -9) < 0.15) { p.titreme = Math.sin(S.zaman * 45) * 2; p.agiz = true; }
+    return p;
+  }
+  if (c.durum === 'tellak' && c.tis && c.tis.faz === 'kese') {
+    p.kanatSag = 0.1 + Math.sin(S.zaman * 26) * 0.6;
+    p.kanatSol = 0.9;
+    p.titreme = Math.sin(S.zaman * 26) * 2;
+    p.agiz = true; p.goz = 'kizgin';
     return p;
   }
   if (c.durum === 'yikaniyor') {
@@ -1206,18 +1533,16 @@ function ciz() {
   for (const c of S.tavuklar) if (!(c.durum === 'kavga' && c.kavga && c.kavga.faz === 'kavga')) cizilecek.push({ y: c.y, tur: 't', c });
   for (const k of S.kavgalar) if (k.faz === 'kavga') cizilecek.push({ y: k.y, tur: 'k', k });
   for (const e of S.yumurtalar) cizilecek.push({ y: e.y, tur: 'e', e });
-  if (S.mod === 'hamam' && S.hc.durum !== 'dj') cizilecek.push({ y: S.hc.y, tur: 'h' });
-  cizilecek.push({ y: MERKEZ.y + 5, tur: 'm' });
+  cizilecek.push({ y: S.mod === 'hamam' ? HC_DJ.y : MERKEZ.y + 5, tur: 'm' });
   cizilecek.sort((a, b) => a.y - b.y);
 
   // el ele tutuşma çizgileri (halkada yan yana olanlar)
   kolCizgileri();
 
   for (const o of cizilecek) {
-    if (o.tur === 't') { const c = o.c; tavukCiz(ctx, c, c.x, c.y, derinlikOlcek(c.y) * c.olcek, poz(c)); }
+    if (o.tur === 't') { const c = o.c; karakterCiz(ctx, c, c.x, c.y, derinlikOlcek(c.y) * c.olcek, poz(c)); }
     else if (o.tur === 'k') bulutCiz(o.k);
     else if (o.tur === 'e') yumurtaCiz(o.e);
-    else if (o.tur === 'h') hamamcanCiz();
     else merkezCiz();
   }
   // ko yıldızları
@@ -1280,24 +1605,7 @@ function merkezCiz() {
     // notalar
     if (Math.random() < 0.05 * (1 + S.tempo / 50)) parcacik('yazi', x + rnd(-30, 30), y - 110, { metin: sec(['♪', '♫', '♬']), renk: '#fff', boyut: 26 });
   } else {
-    const p = { bob: Math.abs(Math.sin(t * 6.2)) * 5, titreme: 0, egim: Math.sin(t * 3.1) * 0.15, kanatSol: -0.2 + Math.sin(t * 12) * 0.3, kanatSag: -1.2 + Math.sin(t * 6.2) * 0.4, bacak: 0, goz: 'normal', yatik: false, gozluk: true, donus: 0, agiz: true };
-    const dj = S.hc.durum === 'dj';
-    // DJ masası (Hamamcan masadayken arkasında durur)
-    if (dj) tavukCiz(ctx, HAMAMCAN, x, y - 10, 1.35, p);
-    ctx.fillStyle = '#212529'; ctx.beginPath(); ctx.roundRect(x - 62, y - 30, 124, 34, 6); ctx.fill();
-    ctx.fillStyle = '#495057';
-    for (const dx of [-35, 35]) { ctx.beginPath(); ctx.ellipse(x + dx, y - 26, 20, 6, 0, 0, Math.PI * 2); ctx.fill(); }
-    ctx.fillStyle = `hsl(${(S.zaman * 200) % 360},90%,60%)`;
-    for (let i = 0; i < 6; i++) ctx.fillRect(x - 15 + i * 5, y - 10 - Math.abs(Math.sin(S.zaman * 8 + i)) * 12, 3, Math.abs(Math.sin(S.zaman * 8 + i)) * 12 + 2);
-    if (dj) {
-      // kulaklık
-      ctx.strokeStyle = '#111'; ctx.lineWidth = 4;
-      const hy = y - 10 - 62 * 1.35 - p.bob * 1.35;
-      ctx.beginPath(); ctx.arc(x, hy, 21, Math.PI * 1.05, Math.PI * 1.95); ctx.stroke();
-      ctx.fillStyle = '#e64980';
-      ctx.beginPath(); ctx.ellipse(x - 21, hy + 3, 5.5, 9, 0, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath(); ctx.ellipse(x + 21, hy + 3, 5.5, 9, 0, 0, Math.PI * 2); ctx.fill();
-    }
+    hamamcanCiz();
   }
 }
 
@@ -1307,7 +1615,21 @@ function bulutCiz(k) {
   // dışarı fırlayan uzuvlar
   for (const u of k.uzuv) {
     ctx.save(); ctx.translate(x, y); ctx.rotate(u.a);
-    if (u.tur === 'bacak') {
+    if (S.mod === 'hamam') {
+      const k = u.sahip.insan;
+      ctx.strokeStyle = k.ten; ctx.lineWidth = 8; ctx.lineCap = 'round';
+      if (u.tur === 'bacak') {
+        ctx.beginPath(); ctx.moveTo(40, 0); ctx.lineTo(68, 0); ctx.stroke();
+        ctx.fillStyle = '#8b5a2b'; ctx.fillRect(68, -8, 6, 16);
+      } else if (u.tur === 'kanat') {
+        ctx.beginPath(); ctx.moveTo(40, 0); ctx.lineTo(66, 0); ctx.stroke();
+        ctx.fillStyle = k.ten; ctx.beginPath(); ctx.arc(70, 0, 6, 0, Math.PI * 2); ctx.fill();
+      } else {
+        ctx.fillStyle = k.ten; ctx.beginPath(); ctx.arc(64, 0, 15, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = k.sacRenk; ctx.beginPath(); ctx.arc(64, 0, 15, Math.PI * 0.6, Math.PI * 1.4); ctx.fill();
+        ctx.fillRect(66, -7, 4, 14);
+      }
+    } else if (u.tur === 'bacak') {
       ctx.strokeStyle = '#f59f00'; ctx.lineWidth = 4; ctx.lineCap = 'round';
       ctx.beginPath(); ctx.moveTo(40, 0); ctx.lineTo(70, 0); ctx.moveTo(70, -6); ctx.lineTo(70, 6); ctx.stroke();
     } else if (u.tur === 'kanat') {
@@ -1333,9 +1655,10 @@ function bulutCiz(k) {
 
 function koYildiz(c) {
   const s = derinlikOlcek(c.y);
+  const bx = c.x - (S.mod === 'hamam' ? 88 : 30) * s, by = c.y - (S.mod === 'hamam' ? 20 : 28) * s;
   for (let i = 0; i < 3; i++) {
     const a = S.zaman * 4 + (i / 3) * Math.PI * 2;
-    yildizSekli(ctx, c.x - 30 * s + Math.cos(a) * 18 * s, c.y - 28 * s + Math.sin(a) * 6 * s, 7 * s, 3 * s, 5, '#ffd43b');
+    yildizSekli(ctx, bx + Math.cos(a) * 18 * s, by + Math.sin(a) * 6 * s, 7 * s, 3 * s, 5, '#ffd43b');
   }
 }
 
@@ -1358,16 +1681,20 @@ function yumurtaCiz(e) {
 
 function etiketCiz(c) {
   const s = derinlikOlcek(c.y);
-  const pz = c.durum === 'ko' ? 30 : 92;
+  const hamam = S.mod === 'hamam';
+  const yatik = c.durum === 'ko' || (c.durum === 'yatiyor' && c.yatti);
+  const pz = yatik ? (hamam ? 48 : 30) : hamam ? 112 : 92;
   const y = c.y - pz * s;
-  const renk = c.altinTac ? '#ffd43b' : c.hediyeci ? '#ffe8a3' : c.npc ? '#dee2e6' : '#ffffff';
+  const x = yatik && hamam ? c.x - 45 * s : c.x;
+  const renk = c.altinTac ? '#ffd43b' : c.durum === 'tellak' || c.durum === 'yatiyor' ? '#ffc078' : c.hediyeci ? '#ffe8a3' : c.npc ? '#dee2e6' : '#ffffff';
+  const rol = c.durum === 'tellak' ? '🧽' : c.durum === 'yatiyor' ? '🛁' : '';
   if (c.durum !== 'kavga' || !c.kavga || c.kavga.faz !== 'kavga') {
-    etiket(ctx, (c.takipci ? '❤️' : '') + kisalt(c.ad, 12), c.x, y, renk, 12);
+    etiket(ctx, rol + (c.takipci ? '❤️' : '') + kisalt(c.ad, 12), x, y, renk, 12);
   }
   if (c.balon) {
     const a = Math.min(1, c.balon.sure * 3);
     ctx.globalAlpha = a;
-    balonCiz(c.balon.metin, c.x, y - 18);
+    balonCiz(c.balon.metin, x, y - 18);
     ctx.globalAlpha = 1;
   }
 }
@@ -1456,8 +1783,8 @@ function arayuzCiz() {
   ctx.fillStyle = S.mod === 'horon' ? '#ffe066' : '#f783ac'; ctx.fillText(baslik, W / 2, 44);
 
   const cipler = [
-    ['💬', 'Yorum yaz', 'katıl'], ['🥊', '"kavga"', 'dövüş'], S.mod === 'hamam' ? ['🧼', '"hamamcan"', 'keselet'] : ['🥚', '"yumurta"', 'yumurtla'],
-    ['❤️', 'Beğeni', 'tempo'], ['🎁', 'Hediye', 'ÇILDIR!'],
+    ['💬', 'Yorum yaz', 'katıl'], ['🥊', '"kavga"', 'dövüş'], S.mod === 'hamam' ? ['🧽', '"kese"', 'keselen'] : ['🥚', '"yumurta"', 'yumurtla'],
+    ['❤️', 'Beğeni', 'tempo'], S.mod === 'hamam' ? ['🎁', 'Hediye', 'TELLAK OL!'] : ['🎁', 'Hediye', 'ÇILDIR!'],
   ];
   const cw = 136, cx0 = (W - cw * 5) / 2;
   cipler.forEach(([ik, ust, alt], i) => {
@@ -1476,7 +1803,7 @@ function arayuzCiz() {
   ctx.beginPath(); ctx.roundRect(lx, ly, lw, lh, 16); ctx.fill();
   ctx.textAlign = 'left';
   ctx.font = `800 20px ${font}`; ctx.fillStyle = '#ffe066';
-  ctx.fillText('👑 Kümes Kralları', lx + 16, ly + 32);
+  ctx.fillText(S.mod === 'hamam' ? '👑 Hamam Ağaları' : '👑 Kümes Kralları', lx + 16, ly + 32);
   if (!liste.length) {
     ctx.font = `600 15px ${font}`; ctx.fillStyle = '#ccc';
     ctx.fillText('Yorum yaz, ilk sen ol!', lx + 16, ly + 66);
@@ -1514,7 +1841,16 @@ function arayuzCiz() {
   ctx.fillStyle = 'rgba(20,20,30,0.75)';
   ctx.beginPath(); ctx.roundRect(gx - 55, gy + 86, 110, 36, 18); ctx.fill();
   ctx.font = `800 18px ${font}`; ctx.fillStyle = '#fff';
-  ctx.fillText(`🐔 ${S.tavuklar.filter((t) => !t.npc).length}`, gx, gy + 111);
+  ctx.fillText(`${S.mod === 'hamam' ? '🧖' : '🐔'} ${S.tavuklar.filter((t) => !t.npc).length}`, gx, gy + 111);
+  if (S.mod === 'hamam') {
+    const yatan = S.tavuklar.filter((t) => t.durum === 'yatiyor').length;
+    const tellak = S.tavuklar.filter((t) => t.durum === 'tellak').length;
+    ctx.fillStyle = 'rgba(20,20,30,0.75)';
+    ctx.beginPath(); ctx.roundRect(gx - 80, gy + 132, 160, 62, 14); ctx.fill();
+    ctx.font = `800 16px ${font}`; ctx.fillStyle = '#ffc078';
+    ctx.fillText(`🛁 Göbek taşı ${yatan}/${YATAKLAR.length}`, gx, gy + 156);
+    ctx.fillText(`🧽 Tellak ${tellak}/${MAKS_TELLAK}`, gx, gy + 182);
+  }
 
   // olay akışı
   ctx.textAlign = 'left';
@@ -1533,7 +1869,12 @@ function arayuzCiz() {
   ctx.fillStyle = 'rgba(15,12,25,0.82)';
   ctx.fillRect(0, H - 34, W, 34);
   ctx.textAlign = 'center'; ctx.font = `700 14px ${font}`; ctx.fillStyle = '#ffe066';
-  ctx.fillText('🌹 1+ çıldır  •  💎 30+ konfeti  •  🎁 99+ MAHALLE KAVGASI  •  🚀 500+ ALTIN TAÇ', W / 2, H - 12);
+  if (S.mod === 'hamam') {
+    ctx.font = `800 14px ${font}`;
+    ctx.fillText(`🌹 1+ çıldır  •  🛁 ${YATMA_JETON}+ GÖBEK TAŞINA YAT  •  🧽 ${TELLAK_JETON}+ TELLAK OL  •  🎁 99+ kavga`, W / 2, H - 12);
+  } else {
+    ctx.fillText('🌹 1+ çıldır  •  💎 30+ konfeti  •  🎁 99+ MAHALLE KAVGASI  •  🚀 500+ ALTIN TAÇ', W / 2, H - 12);
+  }
 
   // manşet
   if (S.manset) {
@@ -1553,7 +1894,7 @@ function arayuzCiz() {
 
 // ------------------------------------------------------------------ demo
 const DEMO_ADLAR = ['Ayşe_61', 'karadenizli_temel', 'Hamsi Kızı', 'Mehmet53', 'rizeli.ali', 'Zeynep', 'kemençe_aşkı', 'Fadime', 'Oğuz Yaylalı', 'cemile.bildik', 'Hasan Usta', 'horoncu_dursun', 'Nazlı', 'trabzonlu_emre', 'Elif', 'Bayram', 'artvinli', 'sümeyye24'];
-const DEMO_YORUM = ['Selam!', 'Hoppa!', 'kavga', 'Ooo süper', 'yumurta', 'Horon horon!', 'kavga @Zeynep', 'hahaha', 'Bizim köyden selamlar', 'çıldır', 'Tempoyu artır!', '😂😂😂', 'Hamsi var mı?', 'yumurta', 'Ula ne güzel', 'hamamcan', 'kese at bana'];
+const DEMO_YORUM = ['Selam!', 'Hoppa!', 'kavga', 'Ooo süper', 'yumurta', 'Horon horon!', 'kavga @Zeynep', 'hahaha', 'Bizim köyden selamlar', 'çıldır', 'Tempoyu artır!', '😂😂😂', 'Hamsi var mı?', 'yumurta', 'Ula ne güzel', 'hamamcan', 'kese at bana', 'kese', 'tellak olcam', 'göbek taşı'];
 function demoGuncelle(dt) {
   S.demoSayac -= dt;
   if (S.demoSayac > 0) return;
@@ -1563,7 +1904,7 @@ function demoGuncelle(dt) {
   const r = Math.random();
   if (r < 0.55) olayIsle({ tur: 'yorum', kisi, metin: sec(DEMO_YORUM) });
   else if (r < 0.85) olayIsle({ tur: 'begeni', kisi, adet: rint(1, 15) });
-  else if (r < 0.95) olayIsle({ tur: 'hediye', kisi, jeton: sec([1, 1, 1, 5, 10]), hediye: sec(['Gül', 'Kalp', 'Donat']), adet: rint(1, 3) });
+  else if (r < 0.95) olayIsle({ tur: 'hediye', kisi, jeton: sec([1, 1, 1, 5, 10, 30]), hediye: sec(['Gül', 'Kalp', 'Donat']), adet: 1 });
   else if (r < 0.985) olayIsle({ tur: 'takip', kisi });
   else olayIsle({ tur: 'hediye', kisi, jeton: sec([99, 100, 199]), hediye: 'Büyük Hediye', adet: 1 });
 }
@@ -1621,11 +1962,13 @@ window.addEventListener('keydown', (e) => {
   else if (k === '4') olayIsle({ tur: 'hediye', kisi: test, jeton: 1, hediye: 'Gül', adet: 1 });
   else if (k === '5') olayIsle({ tur: 'hediye', kisi: test, jeton: 99, hediye: 'Büyük Hediye', adet: 1 });
   else if (k === '6') olayIsle({ tur: 'hediye', kisi: test, jeton: 500, hediye: 'Roket', adet: 1 });
-  else if (k === '7') olayIsle({ tur: 'yorum', kisi: test, metin: 'yumurta' });
+  else if (k === '7') olayIsle({ tur: 'yorum', kisi: test, metin: S.mod === 'hamam' ? 'kese' : 'yumurta' });
+  else if (k === '8') olayIsle({ tur: 'hediye', kisi: test, jeton: 5, hediye: 'Blue Bead', adet: 1 });
+  else if (k === '9') olayIsle({ tur: 'hediye', kisi: test, jeton: 30, hediye: 'Donat', adet: 1 });
 });
 
 const params = new URLSearchParams(location.search);
-if (params.get('mod') === 'hamam') { S.mod = 'hamam'; ses.modAyarla('hamam'); }
+if (params.get('mod') === 'hamam') { S.mod = 'hamam'; MERKEZ.y = HALKALAR.hamam.y; ses.modAyarla('hamam'); }
 if (params.get('demo') === '1') S.demo = true;
 npcEkle();
 sesiBaslat();

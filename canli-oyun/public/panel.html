@@ -66,8 +66,10 @@
     <div class="satir" style="margin-top:10px">
       <button data-test="kavga">🥊 kavga</button>
       <button data-test="yumurta">🥚 yumurta</button>
+      <button data-test="kese">🧽 kese</button>
       <button data-test="begeni">❤️ 30 beğeni</button>
       <button data-test="h1">🌹 1 jeton</button>
+      <button data-test="h5">🛁 5 jeton</button>
       <button data-test="h30">💎 30 jeton</button>
       <button data-test="h99">🎁 99 jeton</button>
       <button data-test="h500">🚀 500 jeton</button>
@@ -77,7 +79,7 @@
   </section>
 
   <p class="not">Oyun ekranı: <code>http://localhost:8080</code>. OBS veya TikTok LIVE Studio'da tarayıcı kaynağı olarak ekleyin
-  (720×1280). Oyun ekranında kısayollar: <b>M</b> sahne, <b>D</b> demo, <b>S</b> ses, <b>1-7</b> deneme olayları.</p>
+  (720×1280). Oyun ekranında kısayollar: <b>M</b> sahne, <b>D</b> demo, <b>S</b> ses, <b>1-9</b> deneme olayları.</p>
 </main>
 <script>
   const $ = (s) => document.querySelector(s);
@@ -109,7 +111,8 @@
   const testler = {
     kavga: { tur: 'yorum', metin: 'kavga' }, yumurta: { tur: 'yorum', metin: 'yumurta' },
     begeni: { tur: 'begeni', adet: 30 }, takip: { tur: 'takip' }, paylasim: { tur: 'paylasim' },
-    h1: { tur: 'hediye', jeton: 1, hediye: 'Gül', adet: 1 }, h30: { tur: 'hediye', jeton: 30, hediye: 'Donat', adet: 1 },
+    h1: { tur: 'hediye', jeton: 1, hediye: 'Gül', adet: 1 }, h5: { tur: 'hediye', jeton: 5, hediye: 'Blue Bead', adet: 1 },
+    kese: { tur: 'yorum', metin: 'kese' }, h30: { tur: 'hediye', jeton: 30, hediye: 'Donat', adet: 1 },
     h99: { tur: 'hediye', jeton: 99, hediye: 'Büyük Hediye', adet: 1 }, h500: { tur: 'hediye', jeton: 500, hediye: 'Roket', adet: 1 },
   };
   document.querySelectorAll('[data-test]').forEach((b) => b.onclick = () => gonder({ type: 'olay', kisi: kisi(), ...testler[b.dataset.test] }));
