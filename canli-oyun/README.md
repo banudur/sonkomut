@@ -4,11 +4,13 @@
 
 - **Tavuk Horonu**: Yaylada tavuklar el (kanat) ele tutuşup 7/16 aksak ritimle horon teper.
   Ortada Kemençeci Horoz çalar. Tempo yükselince tavuklar meşhur "titreme"ye geçer.
-- **Hamam Disko**: Göbek taşında DJ Tellak, tavanda disko topu, tavuklar peştemalle ve güneş gözlüğüyle dans eder.
+- **Hamamcan Disko**: Göbek taşındaki DJ masasında **Hamamcan** çalar: bıyıklı, peştemallı, elinde kesesi olan
+  iri bir horoz. Tavanda disko topu var, tavuklar peştemalle ve güneş gözlüğüyle dans eder. Hamamcan ara sıra
+  masadan inip bir tavuğu keseler (köpükler, "FIŞ FIŞ") ya da tasla soğuk su atar.
 
-| Tavuk Horonu | Mahalle Kavgası | Hamam Disko |
-|---|---|---|
-| ![](ekran/a_horon.png) | ![](ekran/b_kavga.png) | ![](ekran/c_hamam.png) |
+| Tavuk Horonu | Mahalle Kavgası | Hamamcan Disko | Köpük Partisi |
+|---|---|---|---|
+| ![](ekran/a_horon.png) | ![](ekran/b_kavga.png) | ![](ekran/c_hamam.png) | ![](ekran/d_kopuk.png) |
 
 ## İzleyici ne yapınca ne olur?
 
@@ -17,10 +19,11 @@
 | Yorum yazar | Kendi adıyla bir tavuk halkaya katılır, yorumu konuşma balonunda çıkar, zıplar |
 | `kavga` yazar | Tavuğu rastgele birine dalar. `kavga @isim` yazarsa o kişiye dalar. Toz bulutu, POW/GÜM, uçuşan tüyler; kaybeden bayılır |
 | `yumurta` yazar | Tavuğu gıdaklayarak yumurtlar |
+| `hamamcan` / `kese` yazar | Hamamcan Disko'da Hamamcan gelip o tavuğu keseler ya da tasla su atar (+puan) |
 | `çıldır` yazar | Tavuğu birkaç saniye çıldırır (20 sn bekleme süresi var) |
 | Beğeni | Tempo göstergesi dolar, müzik ve dans hızlanır |
 | Hediye (1+ jeton) | Gönderenin tavuğu ÇILDIRIR: deli gibi koşar, kanat çırpar, tüy saçar. Jeton arttıkça süre uzar |
-| 30+ jeton | Konfeti, herkes zıplar |
+| 30+ jeton | Konfeti, herkes zıplar. Hamamcan Disko'da ayrıca **KÖPÜK PARTİSİ** başlar |
 | 99+ jeton | **MAHALLE KAVGASI** (herkes birbirine girer) veya **TOPLU ÇILGINLIK**. 300+ jetonda ikisi birden |
 | 500+ jeton | Havai fişek ve kalıcı **altın taç**. Altın taçlı tavuk kavgalarda daha güçlüdür |
 | Takip / Paylaşım | Kalpler / yumurta yağmuru |
@@ -48,7 +51,7 @@ Kontrol panelini ayrı bir sekmede tutun. Sahne değiştirme, demo modu ve denem
 Yayına çıkmadan önce **Demo** kutusunu açarak oyunu sahte izleyicilerle deneyebilirsiniz.
 
 Oyun ekranı kısayolları: **M** sahne değiştir, **D** demo, **S** ses, **1-7** deneme olayları.
-Adres sonuna `?mod=hamam` eklenirse Hamam Disko ile başlar, `?demo=1` eklenirse demo açık başlar.
+Adres sonuna `?mod=hamam` eklenirse Hamamcan Disko ile başlar, `?demo=1` eklenirse demo açık başlar.
 
 ## Bağlantı sorunları
 

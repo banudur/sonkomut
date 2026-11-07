@@ -366,6 +366,29 @@ export class Ses {
     this.gurultuPatla(t + 0.5, 0.6, 1200, 'lowpass', 0.7);
   }
 
+  kese() {
+    if (!this.calisiyor || !this.sinirla('kese', 130)) return;
+    this.gurultuPatla(this.ctx.currentTime + 0.005, 0.12, 2800, 'bandpass', 0.3);
+  }
+
+  su() {
+    if (!this.calisiyor || !this.sinirla('su', 300)) return;
+    const c = this.ctx, t = c.currentTime + 0.005;
+    this.gurultuPatla(t, 0.7, 1400, 'lowpass', 0.55);
+    for (let i = 0; i < 6; i++) {
+      const tt = t + 0.5 + i * 0.05 + Math.random() * 0.03;
+      const o = c.createOscillator();
+      const g = c.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(rndF(500, 900), tt);
+      o.frequency.exponentialRampToValueAtTime(rndF(1200, 1800), tt + 0.05);
+      g.gain.setValueAtTime(0.12, tt);
+      g.gain.exponentialRampToValueAtTime(0.001, tt + 0.06);
+      o.connect(g).connect(this.efektKazanc);
+      o.start(tt); o.stop(tt + 0.07);
+    }
+  }
+
   dusus() {
     if (!this.calisiyor || !this.sinirla('dusus', 200)) return;
     const c = this.ctx, t = c.currentTime + 0.005;
@@ -404,3 +427,5 @@ const DISKO_LEAD = [
   0, _, 7, _, 12, _, 7, _, 10, _, 7, _, 3, _, 5, _,
   0, _, 7, _, 12, 14, 12, _, 10, _, 12, _, 7, _, _, _,
 ];
+
+function rndF(a, b) { return a + Math.random() * (b - a); }
