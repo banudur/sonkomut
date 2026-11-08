@@ -2,3 +2,5 @@ node_modules/
 ayarlar.json
 public/muzik/*
 !public/muzik/BURAYA-SARKI-KOYUN.txt
+node/
+node-v*/

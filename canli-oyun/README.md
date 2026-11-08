@@ -76,7 +76,8 @@ Mümkünse kendi kayıtlarınızı ya da kullanım izni olan müzikleri kullanı
 
 ## Kurulum
 
-1. [Node.js](https://nodejs.org) LTS sürümünü kurun.
+1. [Node.js](https://nodejs.org) LTS sürümünü kurun. Kuramıyorsanız **Windows Binary (.zip)** sürümünü indirip
+   zip'i `canli-oyun` klasörünün içine çıkarın; `baslat.bat` içinde `node.exe` olan `node-v...` klasörünü kendisi bulur.
 2. **Windows:** `canli-oyun` klasöründeki **`baslat.bat`** dosyasına çift tıklayın.
    Paketleri kurar, sunucuyu başlatır ve kontrol panelini açar.
    **Mac/Linux:** `npm install` ve ardından `npm start` komutlarını çalıştırın.
