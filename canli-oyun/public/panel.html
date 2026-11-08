@@ -45,6 +45,7 @@
     <div class="satir">
       <button class="yesil" data-komut="sarki">🎵 Şarkı değiştir</button>
       <label><input type="checkbox" id="demo"> Demo (sahte izleyiciler)</label>
+      <label><input type="checkbox" id="kamera" checked> 🎥 Düğün kamerası (yakın çekimler)</label>
       <button data-komut="topluKavga">🥊 Mahalle kavgası başlat</button>
       <button data-komut="sifirla">Puanları sıfırla</button>
       <button data-komut="temizle">Tavukları temizle</button>
@@ -102,6 +103,7 @@
   $('#kes').onclick = () => gonder({ type: 'kes' });
   document.querySelectorAll('[data-komut]').forEach((b) => b.onclick = () => gonder({ type: 'komut', ad: b.dataset.komut, deger: b.dataset.deger }));
   $('#demo').onchange = (e) => gonder({ type: 'komut', ad: 'demo', deger: e.target.checked });
+  $('#kamera').onchange = (e) => gonder({ type: 'komut', ad: 'kamera', deger: e.target.checked });
   const kisi = () => { const ad = $('#t-ad').value.trim() || 'deneme'; return { id: ad, ad }; };
   $('#t-yorum').onclick = () => gonder({ type: 'olay', tur: 'yorum', kisi: kisi(), metin: $('#t-metin').value });
   $('#t-metin').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('#t-yorum').click(); });

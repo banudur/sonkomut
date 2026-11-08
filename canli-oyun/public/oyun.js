@@ -11,7 +11,7 @@ const MERKEZ = { x: 360, y: 770 };
 // Tavuk Horonu'nda kavgalar halkanın altındaki çitli meydanda olur
 const ARENA = { x: 360, y: 1058, rx: 235, ry: 72 };
 const HALKALAR = {
-  horon: { y: 770, dis: { rx: 305, ry: 140 }, ic: { rx: 222, ry: 92 } },
+  horon: { y: 770, dis: { rx: 290, ry: 132 }, ic: { rx: 340, ry: 176 } },  // ortası gelin, damat ve çalgıcılara ayrıldı; 2. halka dışta
   hamam: { y: 890, dis: { rx: 310, ry: 140 }, ic: { rx: 228, ry: 100 } },
 };
 const DIS_KAPASITE = 30;
@@ -38,6 +38,7 @@ const S = {
   hc: { x: 360, y: 650, durum: 'dj', hedef: null, tur: null, t: 0, balon: null, sonraki: 15, yuruyor: false },
   kopuk: 0,
   calgi: { kemence: null, davul: null },
+  kamera: { x: W / 2, y: H / 2, z: 1, cekim: null, bekleme: 8, seyirciSonraki: 18, acik: true },
   davulSov: 0,          // >0 iken davulcu yerde yatıp havada davul çalar (kalan sn)
   davulSovSonraki: 18,
   davulSovBekleme: 0,
@@ -450,6 +451,7 @@ function topluKavga(tetikleyen) {
     karisik.unshift(tetikleyen);
   }
   for (let i = 0; i + 1 < karisik.length && S.kavgalar.length < (S.mod === 'horon' ? 4 : 6); i += 2) kavgaBaslat(karisik[i], karisik[i + 1]);
+  if (S.mod === 'horon') cekimBaslat('kavga', () => (S.kavgalar.length ? { x: ARENA.x, y: ARENA.y - 40 } : null), 1.45, 6, 'Mahalle kavgası!', 2);
 }
 
 function kavgaGuncelle(k, dt) {
@@ -462,6 +464,7 @@ function kavgaGuncelle(k, dt) {
     if (yakin || k.t > 2.2) {
       k.faz = 'kavga'; k.t = 0;
       S.sarsinti = Math.max(S.sarsinti, 0.25);
+      if (S.mod === 'horon') cekimBaslat('kavga', () => (S.kavgalar.includes(k) ? { x: k.x, y: k.y - 45 } : null), 1.9, 3.6, 'Kavga meydanından canlı', 2);
     }
   } else if (k.faz === 'kavga') {
     k.uzuvSayac -= dt;
@@ -674,9 +677,84 @@ function calgiciYap(c, tur) {
     konfeti(160);
     ses.fanfar(true);
     for (let i = 0; i < 12; i++) parcacik('kalp', MERKEZ.x + rnd(-60, 60), MERKEZ.y - rnd(60, 120));
+    cekimBaslat('dugun', () => ({ x: MERKEZ.x, y: MERKEZ.y - 60 }), 2.1, 5, 'Gelin ile damat', 3);
   } else {
     mansetGoster(yazi.manset, `${kisalt(c.ad, 18)} sahneye çıktı ${CALGI_IKON[tur]}`, yazi.renk);
   }
+}
+
+// ---- Düğün kameramanı: ara sıra seyircilere, davulcu şovuna, kavgaya ve gelin-damada yakın çekim yapar.
+// Öncelik: 3 davul şovu / düğün, 2 kavga, 1 seyirci. Çekimler arasında kısa bir genel plan beklemesi var.
+function cekimBaslat(tur, odak, z, sure, yazi, oncelik) {
+  const k = S.kamera;
+  if (!k.acik) return false;
+  if (k.cekim && k.cekim.oncelik >= oncelik) return false;
+  if (!k.cekim && k.bekleme > 0 && oncelik < 3) return false;
+  if (!odak()) return false;
+  k.cekim = { tur, odak, z, sure, yazi, oncelik, t: 0 };
+  return true;
+}
+
+function seyirciCek() {
+  let adaylar = S.tavuklar.filter((t) => !t.npc && t.durum === 'halka');
+  if (!adaylar.length) adaylar = S.tavuklar.filter((t) => t.durum === 'halka');
+  if (!adaylar.length) return;
+  const c = sec(adaylar);
+  // tavuk ekranın ortasının biraz altında, sağdaki kutuların altında kalsın
+  const ok = cekimBaslat('seyirci', () => (S.tavuklar.includes(c) ? { x: c.x, y: c.y - 95 } : null), 2.3, 4.2, `${kisalt(c.ad, 14)} kameraya el sallıyor`, 1);
+  if (!ok) return;
+  c.elSalla = 3.5;
+  zipla(c);
+  balon(c, sec(['Selam anneciğim! 👋', 'Beni çekiyorlar! 😎', 'Hayırlı olsun! 💐', 'Ula bize de bak!', 'Köydekilere selam!']), 3);
+}
+
+function kameraGuncelle(dt) {
+  const k = S.kamera;
+  k.bekleme -= dt;
+  let hx = W / 2, hy = H / 2, hz = 1;
+  if (k.cekim) {
+    k.cekim.t += dt;
+    const o = k.cekim.t <= k.cekim.sure ? k.cekim.odak() : null;
+    if (!o) { k.cekim = null; k.bekleme = 7; }
+    else { hx = o.x; hy = o.y; hz = k.cekim.z; }
+  } else if (k.acik) {
+    k.seyirciSonraki -= dt;
+    if (k.seyirciSonraki <= 0) { k.seyirciSonraki = rnd(25, 40); seyirciCek(); }
+  }
+  const a = Math.min(1, dt * 2.2);
+  k.z += (hz - k.z) * a;
+  if (Math.abs(k.z - 1) < 0.002 && hz === 1) k.z = 1;
+  // görüntü sahnenin dışına taşmasın
+  const yw = W / (2 * k.z), yh = H / (2 * k.z);
+  hx = Math.max(yw, Math.min(W - yw, hx));
+  hy = Math.max(yh, Math.min(H - yh, hy));
+  k.x += (hx - k.x) * a; k.y += (hy - k.y) * a;
+  k.x = Math.max(yw, Math.min(W - yw, k.x));
+  k.y = Math.max(yh, Math.min(H - yh, k.y));
+}
+
+// Kamera yakındayken: köşe çerçeveleri ve yanıp sönen REC
+function kameraCerceve() {
+  const k = S.kamera;
+  const a = Math.max(0, Math.min(1, (k.z - 1.1) / 0.5));
+  if (a <= 0) return;
+  ctx.save();
+  ctx.globalAlpha = a;
+  ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+  const x0 = 22, y0 = 144, x1 = W - 22, y1 = H - 46, L = 46;
+  for (const [x, y, dx, dy] of [[x0, y0, 1, 1], [x1, y0, -1, 1], [x0, y1, 1, -1], [x1, y1, -1, -1]]) {
+    ctx.beginPath(); ctx.moveTo(x + dx * L, y); ctx.lineTo(x, y); ctx.lineTo(x, y + dy * L); ctx.stroke();
+  }
+  const yazi = k.cekim ? k.cekim.yazi : '';
+  ctx.font = '800 16px "Segoe UI", "Noto Sans", Arial, sans-serif';
+  const metin = `REC   🎥 ${yazi}`;
+  const w = ctx.measureText(metin).width + 44;
+  const bx = W / 2 - w / 2, by = 1100;
+  ctx.fillStyle = 'rgba(15,12,25,0.78)';
+  ctx.beginPath(); ctx.roundRect(bx, by, w, 32, 16); ctx.fill();
+  if (Math.floor(S.zaman * 2) % 2 === 0) { ctx.fillStyle = '#ff3b3b'; ctx.beginPath(); ctx.arc(bx + 20, by + 16, 7, 0, Math.PI * 2); ctx.fill(); }
+  ctx.fillStyle = '#fff'; ctx.textAlign = 'left'; ctx.fillText(metin, bx + 34, by + 22);
+  ctx.restore();
 }
 
 // Davulcunun şovu: ara sıra sırtüstü yere yatıp davulu havada çalar
@@ -693,6 +771,7 @@ function davulSovBaslat(kim) {
   akisEkle(`🥁 ${d ? kisalt(d.ad, 14) : 'Davulcu Horoz'} yere yattı, havada davul çalıyor!`, '#ffa94d');
   S.tavuklar.forEach((t) => zipla(t, rnd(0, 0.5)));
   ses.fanfar(false);
+  cekimBaslat('davul', () => (S.davulSov > 0 ? { x: yer.x + 10, y: yer.y - 55 } : null), 2.1, 7, 'Davulcu yerde çalıyor!', 3);
   return true;
 }
 
@@ -972,6 +1051,7 @@ function guncelle(dt) {
   S.sarsinti = Math.max(0, S.sarsinti - dt);
   S.sarkiBekleme = (S.sarkiBekleme || 0) - dt;
   if (S.mod === 'horon') davulSovGuncelle(dt);
+  kameraGuncelle(dt);
   S.flas = Math.max(0, S.flas - dt * 1.5);
 
   yerleriHesapla();
@@ -979,6 +1059,7 @@ function guncelle(dt) {
 
   for (const c of S.tavuklar) {
     c.kavgaBekleme -= dt; c.yumurtaBekleme -= dt; c.cildirBekleme -= dt;
+    if (c.elSalla > 0) c.elSalla -= dt;
     if (c.temiz > 0) { c.temiz -= dt; if (Math.random() < dt * 5) parcacik('yildiz', c.x + rnd(-22, 22), c.y - rnd(20, 80)); }
     if (c.yumurtliyor > 0) c.yumurtliyor -= dt;
     if (c.ziplama > 0) c.ziplama -= dt;
@@ -1823,6 +1904,10 @@ function poz(c) {
     p.titreme = coskun > 0.85 ? Math.sin(S.zaman * 50) * 2.5 : 0;
     p.agiz = v < 0.3;
   }
+  if (c.elSalla > 0 && c.durum === 'halka') {
+    p.kanatSag = -1.5 + Math.sin(S.zaman * 14) * 0.45;
+    p.goz = 'mutlu'; p.agiz = true;
+  }
   if (c.ziplama > 0 && c.durum !== 'ko') {
     const gecikme = c.ziplamaGecikme || 0;
     const z = c.ziplama - gecikme;
@@ -1841,6 +1926,8 @@ function ciz() {
   g_reset();
   ctx.save();
   if (S.sarsinti > 0) ctx.translate(rnd(-1, 1) * S.sarsinti * 14, rnd(-1, 1) * S.sarsinti * 14);
+  const kam = S.kamera;
+  if (kam.z !== 1) { ctx.translate(W / 2, H / 2); ctx.scale(kam.z, kam.z); ctx.translate(-kam.x, -kam.y); }
   ctx.drawImage(sahneHazirla(S.mod), 0, 0);
   if (S.mod === 'hamam') hamamIsiklari(ctx);
 
@@ -1878,6 +1965,7 @@ function ciz() {
   for (const p of S.parcaciklar) parcacikCiz(p);
   ctx.restore();
 
+  kameraCerceve();
   arayuzCiz();
   if (S.flas > 0) { ctx.fillStyle = `rgba(255,255,255,${S.flas})`; ctx.fillRect(0, 0, W, H); }
 }
@@ -2244,6 +2332,7 @@ function komutIsle(m) {
   switch (m.ad) {
     case 'demo': S.demo = !!m.deger; akisEkle(S.demo ? 'Demo modu açık' : 'Demo modu kapalı', '#adb5bd'); break;
     case 'sarki': sarkiDegistir('Yayıncı', null); break;
+    case 'kamera': S.kamera.acik = !!m.deger; if (!S.kamera.acik) S.kamera.cekim = null; break;
     case 'sifirla': S.puanlar.clear(); break;
     case 'temizle': [...S.tavuklar].forEach((c) => !c.npc && tavukCikar(c)); if (!S.tavuklar.length) npcEkle(); break;
     case 'ses': ses.sesAcKapa(); break;
