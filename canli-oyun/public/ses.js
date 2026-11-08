@@ -1,5 +1,6 @@
-// Ses motoru: tamamen kodla üretilen müzik ve efektler (dosya gerekmez).
-// Horon: 7/16 aksak ritim (2+2+3), davul + kemençe benzeri ezgi.
+// Ses motoru: kodla üretilen müzik ve efektler.
+// Horon: 7/16 aksak ritim (2+2+3), davul + kemençe ya da tulum ezgisi. Birkaç hazır horon havası var;
+// public/muzik klasörüne konan şarkı dosyaları da listeye eklenir ve "şarkı" komutuyla sırayla çalınır.
 // Disko: 4/4 tekme, el çırpma, zil, oktav bas ve akor vuruşları.
 
 export class Ses {
@@ -12,6 +13,42 @@ export class Ses {
     this.sonrakiZaman = 0;
     this.vuruslar = [];    // görsel senkron için {zaman, guclu}
     this.sonEfekt = {};
+    this.sarkilar = HAZIR_SARKILAR.slice();
+    this.sarkiNo = 0;
+    this.oynatici = null;  // dosyadan çalınan şarkı için <audio>
+  }
+
+  get sarki() { return this.sarkilar[this.sarkiNo] || HAZIR_SARKILAR[0]; }
+
+  // Dansın ölçü süresi (tempo çarpanı hariç), görsel senkron için
+  olcuSuresi() { return (this.sarki.dosya ? 0.085 : this.sarki.temel) * 7; }
+
+  // public/muzik içindeki dosyaları listenin başına ekler ve ilkini çalar
+  dosyalariEkle(liste) {
+    const dosyalar = (liste || []).filter((d) => d && d.url).map((d) => ({ ad: d.ad || 'Türkü', dosya: d.url }));
+    if (!dosyalar.length) return;
+    this.sarkilar = dosyalar.concat(HAZIR_SARKILAR);
+    this.sarkiNo = 0;
+    this.sarkiyiUygula();
+  }
+
+  sonrakiSarki() {
+    this.sarkiNo = (this.sarkiNo + 1) % this.sarkilar.length;
+    this.adim = 0;
+    this.sarkiyiUygula();
+    return this.sarki;
+  }
+
+  sarkiyiUygula() {
+    if (this.oynatici) { this.oynatici.pause(); this.oynatici = null; }
+    const s = this.sarki;
+    if (!s.dosya || !this.ctx) return;
+    const el = new Audio(s.dosya);
+    el.loop = true;
+    const kaynak = this.ctx.createMediaElementSource(el);
+    kaynak.connect(this.dosyaKazanc);
+    this.oynatici = el;
+    el.play().catch(() => {});
   }
 
   baslat() {
@@ -32,6 +69,9 @@ export class Ses {
     this.efektKazanc = c.createGain();
     this.efektKazanc.gain.value = 0.8;
     this.efektKazanc.connect(this.ana);
+    this.dosyaKazanc = c.createGain();
+    this.dosyaKazanc.gain.value = 0.9;
+    this.dosyaKazanc.connect(this.ana);
 
     const len = c.sampleRate;
     this.gurultu = c.createBuffer(1, len, c.sampleRate);
@@ -40,6 +80,7 @@ export class Ses {
 
     this.sonrakiZaman = c.currentTime + 0.1;
     setInterval(() => this.zamanla(), 25);
+    if (this.sarki.dosya) this.sarkiyiUygula();
   }
 
   get calisiyor() { return this.ctx && this.ctx.state === 'running'; }
@@ -55,6 +96,15 @@ export class Ses {
   zamanla() {
     const c = this.ctx;
     if (!c || c.state !== 'running') return;
+    if (this.mod === 'horon' && this.sarki.dosya) {
+      // dosyadan çalarken beğeni temposu şarkıyı biraz hızlandırır
+      if (this.oynatici) {
+        const hedef = 1 + (this.hiz - 1) * 0.45;
+        if (Math.abs(this.oynatici.playbackRate - hedef) > 0.01) this.oynatici.playbackRate = hedef;
+      }
+      this.sonrakiZaman = c.currentTime + 0.05;
+      return;
+    }
     if (this.sonrakiZaman < c.currentTime - 0.2) this.sonrakiZaman = c.currentTime + 0.05;
     while (this.sonrakiZaman < c.currentTime + 0.12) {
       if (this.mod === 'horon') this.horonAdim(this.adim, this.sonrakiZaman);
@@ -66,7 +116,7 @@ export class Ses {
 
   adimSuresi() {
     // horon: 16'lık ≈ 0.085 sn → ölçü (7 adım) ≈ 0.6 sn; disko: 118 bpm 16'lık
-    const temel = this.mod === 'horon' ? 0.085 : 60 / 118 / 4;
+    const temel = this.mod === 'horon' ? (this.sarki.temel || 0.085) : 60 / 118 / 4;
     return temel / this.hiz;
   }
 
@@ -95,12 +145,15 @@ export class Ses {
     if (k === 6 && olcu % 2 === 1) this.tokmak(t, 0.4);
     if (k === 5 && olcu % 4 === 3) this.davul(t, 0.6);
 
-    // kemençe ezgisi: dorian makama yakın (Re-Mi-Fa-Sol-La-Si♭-Do)
-    const derece = HORON_EZGI[(olcu % 8) * 7 + k];
+    // ezgi: dorian makama yakın dizi (kökten itibaren)
+    const sarki = this.sarki;
+    if (sarki.calgi === 'tulum' && k === 0 && olcu % 2 === 0) this.tulum(t, sarki.kok - 12, this.adimSuresi() * 14, 0.05);
+    const derece = sarki.ezgi[(olcu % 8) * 7 + k];
     if (derece !== null) {
-      const midi = 62 + DORIAN[((derece % 7) + 7) % 7] + 12 * Math.floor(derece / 7);
+      const midi = sarki.kok + DORIAN[((derece % 7) + 7) % 7] + 12 * Math.floor(derece / 7);
       const sure = (k === 4 || k === 5) ? this.adimSuresi() * 1.4 : this.adimSuresi() * 0.95;
-      this.kemence(t, midi, sure);
+      if (sarki.calgi === 'tulum') this.tulum(t, midi, sure, 0.16);
+      else this.kemence(t, midi, sure);
     }
   }
 
@@ -148,6 +201,26 @@ export class Ses {
     o.connect(filtre).connect(tepe).connect(g).connect(this.muzikKazanc);
     o.start(t); vib.start(t);
     o.stop(t + sure + 0.06); vib.stop(t + sure + 0.06);
+  }
+
+  // tulum: genzden gelen, vızıltılı gayda sesi
+  tulum(t, midi, sure, guc) {
+    const c = this.ctx;
+    const f = 440 * Math.pow(2, (midi - 69) / 12);
+    const g = c.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(guc, t + 0.01);
+    g.gain.setValueAtTime(guc * 0.9, t + sure * 0.8);
+    g.gain.exponentialRampToValueAtTime(0.001, t + sure + 0.03);
+    const fl = c.createBiquadFilter();
+    fl.type = 'bandpass'; fl.frequency.value = 1900; fl.Q.value = 1.2;
+    fl.connect(g).connect(this.muzikKazanc);
+    for (const [tur, carp] of [['square', 1], ['sawtooth', 1.004]]) {
+      const o = c.createOscillator();
+      o.type = tur; o.frequency.setValueAtTime(f * carp, t);
+      o.connect(fl);
+      o.start(t); o.stop(t + sure + 0.05);
+    }
   }
 
   // ---------------------------------------------------------------- disko
@@ -434,6 +507,43 @@ const HORON_EZGI = [
   4, 3, 2, 3, 1, 2, _,
   2, 3, 4, 5, 4, 3, 2,
   1, 2, 1, 0, 0, _, -1,
+];
+// Hazır horon havaları (kodla çalınır). 8 ölçü x 7 adım, sayılar dorian derecesi (0 = kök).
+const SIKSARA_EZGI = [
+  2, 2, 1, 2, 3, 2, 1,
+  0, 0, 1, 2, 1, 0, _,
+  2, 2, 1, 2, 3, 4, 3,
+  2, 1, 0, 1, 0, _, 0,
+  4, 4, 3, 4, 5, 4, 3,
+  2, 3, 2, 1, 2, 1, _,
+  2, 2, 1, 2, 3, 2, 1,
+  0, 1, 0, -1, 0, _, 0,
+];
+const TULUM_EZGI = [
+  7, 7, 6, 7, 8, 7, 6,
+  5, 5, 4, 5, 6, 5, _,
+  7, 7, 6, 7, 8, 9, 8,
+  7, 6, 5, 4, 5, _, 5,
+  4, 5, 6, 7, 6, 5, 4,
+  3, 4, 3, 2, 3, 4, _,
+  4, 4, 3, 4, 5, 4, 3,
+  2, 1, 2, 0, 0, _, 0,
+];
+const AGIR_EZGI = [
+  0, _, 2, _, 4, 3, 2,
+  3, _, 2, 1, 2, _, _,
+  4, _, 5, 4, 3, _, 2,
+  1, 2, 1, 0, 1, _, _,
+  4, _, 5, _, 7, 6, 5,
+  6, _, 5, 4, 5, _, _,
+  4, 3, 2, 3, 2, 1, 2,
+  1, _, 0, _, 0, _, _,
+];
+const HAZIR_SARKILAR = [
+  { ad: 'Dik Horon', temel: 0.085, kok: 62, calgi: 'kemence', ezgi: HORON_EZGI },
+  { ad: 'Sıksara', temel: 0.068, kok: 64, calgi: 'kemence', ezgi: SIKSARA_EZGI },
+  { ad: 'Tulum Havası', temel: 0.08, kok: 62, calgi: 'tulum', ezgi: TULUM_EZGI },
+  { ad: 'Ağır Horon', temel: 0.105, kok: 60, calgi: 'kemence', ezgi: AGIR_EZGI },
 ];
 const DISKO_AKOR = [
   [45, 48, 52], // La minör

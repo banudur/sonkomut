@@ -1,0 +1,10 @@
+Bu klasöre çalınmasını istediğiniz türkü dosyalarını koyun (.mp3, .m4a, .ogg, .wav).
+
+- Dosya adı ekranda şarkı adı olarak görünür. Örnek: "01 Ben Giderim Batuma.mp3"
+  Baştaki sıra numarası ekranda gösterilmez, sadece çalma sırasını belirler.
+- Oyun açılınca ilk dosya çalar. İzleyiciler "şarkı" yazınca sıradakine geçer.
+- Dosyalardan sonra oyunun kendi horon havaları gelir (Dik Horon, Sıksara, Tulum Havası, Ağır Horon).
+- Dosya ekleyip çıkardıktan sonra oyun sayfasını yenileyin (F5).
+
+Not: Başkasına ait kayıtları yayında çalmak telif sorununa yol açabilir; TikTok bu durumda yayının
+sesini kısabilir. Mümkünse kendi kayıtlarınızı ya da kullanım izni olan müzikleri koyun.

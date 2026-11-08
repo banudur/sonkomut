@@ -221,9 +221,10 @@ function yorum(kisi, metin) {
   }
   const k = kis(metin);
   const hamam = S.mod === 'hamam';
-  if (/hamamcan|hamam can/.test(k)) {
-    if (!hamam) balon(c, 'Hamamcan hamamda! 🧼');
-    else if (!hamamcanIs(c)) balon(c, 'Hamamcan meşgul!');
+  if (/şarkı|sarkı|şarki|sarki|türkü|turku|müzik|muzik|🎵|🎶/.test(k)) {
+    sarkiDegistir(kisi.ad, c);
+  } else if (hamam && /hamamcan|hamam can/.test(k)) {
+    if (!hamamcanIs(c)) balon(c, 'Hamamcan meşgul!');
     else zipla(c);
   } else if (hamam && /kese|🧼|🧽/.test(k)) {
     keseIste(c);
@@ -242,14 +243,22 @@ function yorum(kisi, metin) {
   } else if (/çıldır|cildir|deli|çıldırt|cildirt/.test(k)) {
     if (c.cildirBekleme <= 0) { cildir(c, 4); c.cildirBekleme = 20; }
     balon(c, cilginLaf(true));
-  } else if (/disko|disco/.test(k) && S.mod === 'horon') {
-    balon(c, 'Hamama gidelim! 🪩');
-    zipla(c);
   } else {
     zipla(c);
     if (metin.trim()) balon(c, metin);
     if (Math.random() < 0.3) ses.gidak(1);
   }
+}
+
+// "şarkı" yazan sıradaki havaya geçirir (herkes için 15 sn bekleme)
+function sarkiDegistir(ad, c) {
+  if (c && S.sarkiBekleme > 0) { balon(c, 'Şarkı yeni değişti! ⏳'); return; }
+  S.sarkiBekleme = 15;
+  const s = ses.sonrakiSarki();
+  mansetGoster(`🎵 ${s.ad.toLocaleUpperCase('tr')}`, `${kisalt(ad, 18)} şarkıyı değiştirdi`, '#74c0fc');
+  akisEkle(`🎵 ${kisalt(ad, 14)} şarkıyı değiştirdi: ${kisalt(s.ad, 22)}`, '#74c0fc');
+  if (c) { balon(c, 'Bunu çalın! 🎶'); zipla(c); }
+  S.tavuklar.forEach((t) => zipla(t, rnd(0, 0.4)));
 }
 
 function hedefBul(k, ben) {
@@ -667,7 +676,7 @@ function calgiciCiz(c, tur, npc) {
   const yer = calgiciYer(tur);
   const x = yer.x, y = yer.y, s = 1.12;
   const t = S.dansZamani;
-  const olcu = 0.595;
+  const olcu = ses.olcuSuresi();
   const ic = ((t / olcu) % 1) * 7;
   const bas = ic < 2 ? 0 : ic < 4 ? 2 : 4;
   const bp = (ic - bas) / (bas === 4 ? 3 : 2);
@@ -842,6 +851,7 @@ function guncelle(dt) {
   S.dansZamani += dt * hiz;
   S.halkaAci += dt * (S.mod === 'horon' ? 0.13 : 0.06) * hiz;
   S.sarsinti = Math.max(0, S.sarsinti - dt);
+  S.sarkiBekleme = (S.sarkiBekleme || 0) - dt;
   S.flas = Math.max(0, S.flas - dt * 1.5);
 
   yerleriHesapla();
@@ -1628,7 +1638,7 @@ function poz(c) {
     p.bob = Math.abs(Math.sin(S.zaman * 11 + c.faz * 6)) * 4;
   } else if (S.mod === 'horon') {
     // 7/16 aksak: 2+2+3 vuruş
-    const olcu = 0.595;
+    const olcu = ses.olcuSuresi();
     const ic = ((t / olcu) % 1) * 7;
     const bas = ic < 2 ? 0 : ic < 4 ? 2 : 4;
     const bp = (ic - bas) / (bas === 4 ? 3 : 2);
@@ -1925,17 +1935,18 @@ function arayuzCiz() {
   ctx.fillStyle = S.mod === 'horon' ? '#ffe066' : '#f783ac'; ctx.fillText(baslik, W / 2, 44);
 
   const cipler = [
-    ['💬', 'Yorum yaz', 'katıl'], ['🥊', '"kavga"', 'dövüş'], S.mod === 'hamam' ? ['🧽', '"kese"', 'keselen'] : ['🥚', '"yumurta"', 'yumurtla'],
-    ['❤️', 'Beğeni', 'tempo'], S.mod === 'hamam' ? ['🎁', 'Hediye', 'TELLAK OL!'] : ['🎁', 'Hediye', 'ÇILDIR!'],
+    ['💬', 'Yorum yaz', 'katıl'], ['🥊', '"kavga"', 'dövüş'], ['🎵', '"şarkı"', 'değiştir'],
+    ['🥚', '"yumurta"', 'yumurtla'], ['❤️', 'Beğeni', 'tempo'], ['🎁', 'Hediye', 'ÇILDIR!'],
   ];
-  const cw = 136, cx0 = (W - cw * 5) / 2;
+  const cw = 118, cx0 = (W - cw * cipler.length) / 2;
+  const sonCip = cipler.length - 1;
   cipler.forEach(([ik, ust, alt], i) => {
     const x = cx0 + i * cw;
-    ctx.fillStyle = i === 4 ? 'rgba(255,212,59,0.18)' : 'rgba(255,255,255,0.08)';
+    ctx.fillStyle = i === sonCip ? 'rgba(255,212,59,0.18)' : 'rgba(255,255,255,0.08)';
     ctx.beginPath(); ctx.roundRect(x + 4, 58, cw - 8, 66, 10); ctx.fill();
     ctx.font = `24px ${font}`; ctx.fillStyle = '#fff'; ctx.fillText(ik, x + cw / 2, 84);
     ctx.font = `700 14px ${font}`; ctx.fillStyle = '#fff'; ctx.fillText(ust, x + cw / 2, 102);
-    ctx.font = `800 13px ${font}`; ctx.fillStyle = i === 4 ? '#ffd43b' : '#9be15d'; ctx.fillText(alt, x + cw / 2, 118);
+    ctx.font = `800 13px ${font}`; ctx.fillStyle = i === sonCip ? '#ffd43b' : '#9be15d'; ctx.fillText(alt, x + cw / 2, 118);
   });
 
   // lider tablosu
@@ -2001,6 +2012,13 @@ function arayuzCiz() {
       ctx.fillStyle = kisi ? '#ffc078' : '#adb5bd';
       ctx.fillText(`${CALGI_IKON[tur]} ${kisi ? kisalt(kisi.ad, 11) : `${jeton} jeton: sen ol!`}`, gx, gy + 156 + i * 26);
     });
+    // şimdi çalan
+    ctx.fillStyle = 'rgba(20,20,30,0.75)';
+    ctx.beginPath(); ctx.roundRect(gx - 88, gy + 202, 176, 50, 14); ctx.fill();
+    ctx.font = `700 11px ${font}`; ctx.fillStyle = '#adb5bd';
+    ctx.fillText('ŞİMDİ ÇALIYOR', gx, gy + 220);
+    ctx.font = `800 15px ${font}`; ctx.fillStyle = '#74c0fc';
+    ctx.fillText(`🎵 ${kisalt(ses.sarki.ad, 17)}`, gx, gy + 241);
   }
 
   // olay akışı
@@ -2048,11 +2066,12 @@ function arayuzCiz() {
 
 // ------------------------------------------------------------------ demo
 const DEMO_ADLAR = ['Ayşe_61', 'karadenizli_temel', 'Hamsi Kızı', 'Mehmet53', 'rizeli.ali', 'Zeynep', 'kemençe_aşkı', 'Fadime', 'Oğuz Yaylalı', 'cemile.bildik', 'Hasan Usta', 'horoncu_dursun', 'Nazlı', 'trabzonlu_emre', 'Elif', 'Bayram', 'artvinli', 'sümeyye24'];
-const DEMO_YORUM = ['Selam!', 'Hoppa!', 'kavga', 'Ooo süper', 'yumurta', 'Horon horon!', 'kavga @Zeynep', 'hahaha', 'Bizim köyden selamlar', 'çıldır', 'Tempoyu artır!', '😂😂😂', 'Hamsi var mı?', 'yumurta', 'Ula ne güzel', 'hamamcan', 'kese at bana', 'kese', 'tellak olcam', 'göbek taşı'];
+const DEMO_YORUM = ['Selam!', 'Hoppa!', 'kavga', 'Ooo süper', 'yumurta', 'Horon horon!', 'kavga @Zeynep', 'hahaha', 'Bizim köyden selamlar', 'çıldır', 'Tempoyu artır!', '😂😂😂', 'Hamsi var mı?', 'yumurta', 'Ula ne güzel'];
 function demoGuncelle(dt) {
   S.demoSayac -= dt;
   if (S.demoSayac > 0) return;
   S.demoSayac = rnd(0.3, 1.4);
+  if (Math.random() < 0.012) { olayIsle({ tur: 'yorum', kisi: { id: 'demo_dj', ad: 'türkü_sever' }, metin: 'şarkı değiştir' }); return; }
   const ad = sec(DEMO_ADLAR);
   const kisi = { id: 'demo_' + ad, ad };
   const r = Math.random();
@@ -2066,9 +2085,8 @@ function demoGuncelle(dt) {
 // ------------------------------------------------------------------ bağlantı ve kontrol
 function komutIsle(m) {
   switch (m.ad) {
-    case 'mod': modDegistir(m.deger); break;
     case 'demo': S.demo = !!m.deger; akisEkle(S.demo ? 'Demo modu açık' : 'Demo modu kapalı', '#adb5bd'); break;
-    case 'otoMod': S.otoMod = !!m.deger; S.otoModSayac = 0; break;
+    case 'sarki': sarkiDegistir('Yayıncı', null); break;
     case 'sifirla': S.puanlar.clear(); break;
     case 'temizle': [...S.tavuklar].forEach((c) => !c.npc && tavukCikar(c)); if (!S.tavuklar.length) npcEkle(); break;
     case 'ses': ses.sesAcKapa(); break;
@@ -2078,6 +2096,10 @@ function komutIsle(m) {
 
 function sunucuyaBaglan() {
   if (location.protocol === 'file:' || window.KUMES_CEVRIMDISI) return;
+  if (!sunucuyaBaglan.listeAlindi) {
+    sunucuyaBaglan.listeAlindi = true;
+    fetch('/muzik-listesi').then((r) => r.json()).then((l) => ses.dosyalariEkle(l)).catch(() => {});
+  }
   const ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws`);
   ws.onmessage = (e) => {
     let m;
@@ -2109,7 +2131,7 @@ window.addEventListener('keydown', (e) => {
   if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return; // yazı kutusunda kısayol yok
   const k = e.key.toLowerCase();
   const test = { id: 'test_' + rint(1, 6), ad: sec(DEMO_ADLAR) };
-  if (k === 'm') modDegistir(S.mod === 'horon' ? 'hamam' : 'horon');
+  if (k === '0') sarkiDegistir('Yayıncı', null);
   else if (k === 'd') komutIsle({ ad: 'demo', deger: !S.demo });
   else if (k === 's') ses.sesAcKapa();
   else if (k === '1') olayIsle({ tur: 'yorum', kisi: test, metin: 'Selam!' });
@@ -2118,13 +2140,12 @@ window.addEventListener('keydown', (e) => {
   else if (k === '4') olayIsle({ tur: 'hediye', kisi: test, jeton: 1, hediye: 'Gül', adet: 1 });
   else if (k === '5') olayIsle({ tur: 'hediye', kisi: test, jeton: 99, hediye: 'Büyük Hediye', adet: 1 });
   else if (k === '6') olayIsle({ tur: 'hediye', kisi: test, jeton: 500, hediye: 'Roket', adet: 1 });
-  else if (k === '7') olayIsle({ tur: 'yorum', kisi: test, metin: S.mod === 'hamam' ? 'kese' : 'yumurta' });
+  else if (k === '7') olayIsle({ tur: 'yorum', kisi: test, metin: 'yumurta' });
   else if (k === '8') olayIsle({ tur: 'hediye', kisi: test, jeton: 5, hediye: 'Blue Bead', adet: 1 });
   else if (k === '9') olayIsle({ tur: 'hediye', kisi: test, jeton: S.mod === 'horon' ? 10 : 30, hediye: 'Donat', adet: 1 });
 });
 
 const params = new URLSearchParams(location.search);
-if (params.get('mod') === 'hamam') { S.mod = 'hamam'; MERKEZ.y = HALKALAR.hamam.y; ses.modAyarla('hamam'); }
 if (params.get('demo') === '1' || window.KUMES_DEMO) S.demo = true;
 npcEkle();
 sesiBaslat();
@@ -2141,4 +2162,4 @@ function dongu(simdi) {
 requestAnimationFrame(dongu);
 
 // test/otomasyon için
-window.__oyun = { S, olayIsle, komutIsle, modDegistir, hamamcanIs };
+window.__oyun = { S, olayIsle, komutIsle, sarkiDegistir, ses };

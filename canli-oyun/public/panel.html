@@ -43,11 +43,7 @@
   <section>
     <h2>Sahne</h2>
     <div class="satir">
-      <button class="yesil" data-komut="mod" data-deger="horon">🐔 Tavuk Horonu</button>
-      <button class="yesil" data-komut="mod" data-deger="hamam">🧼 Hamamcan Disko</button>
-      <label><input type="checkbox" id="otoMod"> 5 dakikada bir sahne değiştir</label>
-    </div>
-    <div class="satir" style="margin-top:10px">
+      <button class="yesil" data-komut="sarki">🎵 Şarkı değiştir</button>
       <label><input type="checkbox" id="demo"> Demo (sahte izleyiciler)</label>
       <button data-komut="topluKavga">🥊 Mahalle kavgası başlat</button>
       <button data-komut="sifirla">Puanları sıfırla</button>
@@ -66,10 +62,10 @@
     <div class="satir" style="margin-top:10px">
       <button data-test="kavga">🥊 kavga</button>
       <button data-test="yumurta">🥚 yumurta</button>
-      <button data-test="kese">🧽 kese</button>
+      <button data-test="sarki">🎵 şarkı</button>
       <button data-test="begeni">❤️ 30 beğeni</button>
       <button data-test="h1">🌹 1 jeton</button>
-      <button data-test="h5">🥁/🛁 5 jeton</button>
+      <button data-test="h5">🥁 5 jeton</button>
       <button data-test="h10">🎻 10 jeton</button>
       <button data-test="h30">💎 30 jeton</button>
       <button data-test="h99">🎁 99 jeton</button>
@@ -80,7 +76,7 @@
   </section>
 
   <p class="not">Oyun ekranı: <code>http://localhost:8080</code>. OBS veya TikTok LIVE Studio'da tarayıcı kaynağı olarak ekleyin
-  (720×1280). Oyun ekranında kısayollar: <b>M</b> sahne, <b>D</b> demo, <b>S</b> ses, <b>1-9</b> deneme olayları.</p>
+  (720×1280). Oyun ekranında kısayollar: <b>0</b> şarkı, <b>D</b> demo, <b>S</b> ses, <b>1-9</b> deneme olayları.</p>
 </main>
 <script>
   const $ = (s) => document.querySelector(s);
@@ -105,7 +101,6 @@
   $('#kes').onclick = () => gonder({ type: 'kes' });
   document.querySelectorAll('[data-komut]').forEach((b) => b.onclick = () => gonder({ type: 'komut', ad: b.dataset.komut, deger: b.dataset.deger }));
   $('#demo').onchange = (e) => gonder({ type: 'komut', ad: 'demo', deger: e.target.checked });
-  $('#otoMod').onchange = (e) => gonder({ type: 'komut', ad: 'otoMod', deger: e.target.checked });
   const kisi = () => { const ad = $('#t-ad').value.trim() || 'deneme'; return { id: ad, ad }; };
   $('#t-yorum').onclick = () => gonder({ type: 'olay', tur: 'yorum', kisi: kisi(), metin: $('#t-metin').value });
   $('#t-metin').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('#t-yorum').click(); });
@@ -113,7 +108,7 @@
     kavga: { tur: 'yorum', metin: 'kavga' }, yumurta: { tur: 'yorum', metin: 'yumurta' },
     begeni: { tur: 'begeni', adet: 30 }, takip: { tur: 'takip' }, paylasim: { tur: 'paylasim' },
     h1: { tur: 'hediye', jeton: 1, hediye: 'Gül', adet: 1 }, h5: { tur: 'hediye', jeton: 5, hediye: 'Blue Bead', adet: 1 }, h10: { tur: 'hediye', jeton: 10, hediye: 'Kalp', adet: 1 },
-    kese: { tur: 'yorum', metin: 'kese' }, h30: { tur: 'hediye', jeton: 30, hediye: 'Donat', adet: 1 },
+    sarki: { tur: 'yorum', metin: 'şarkı değiştir' }, h30: { tur: 'hediye', jeton: 30, hediye: 'Donat', adet: 1 },
     h99: { tur: 'hediye', jeton: 99, hediye: 'Büyük Hediye', adet: 1 }, h500: { tur: 'hediye', jeton: 500, hediye: 'Roket', adet: 1 },
   };
   document.querySelectorAll('[data-test]').forEach((b) => b.onclick = () => gonder({ type: 'olay', kisi: kisi(), ...testler[b.dataset.test] }));

@@ -1,61 +1,61 @@
-# 🐔 Kümes Sahnesi: TikTok Canlı Yayın Oyunu
+# 🐔 Kümes Sahnesi: Tavuk Horonu
 
-İzleyicilerin yorum, beğeni ve hediyeleriyle yönettiği tavuk oyunu. İki sahnesi var:
+TikTok canlı yayını için, izleyicilerin yorum, beğeni ve hediyeleriyle yönettiği tavuk horonu oyunu.
 
-- **Tavuk Horonu** (açılışta gelen sahne): Yaylada tavuklar kanat kanada tutuşup 7/16 aksak ritimle horon teper.
-  Ortada **kemençeci** ve **davulcu** yan yana çalar; izleyiciler hediyeyle bu rolleri kapabilir.
-  Kavgalar halkanın altındaki çitli **Kavga Meydanı**'nda olur, horon bozulmaz.
-  Tempo yükselince tavuklar meşhur "titreme"ye geçer.
-- **Hamamcan Disko**: Hamamda disko! Bu sahnede herkes **peştemallı bir adam** olur (nalın, havlu, bıyık, göbek).
-  DJ kabininde pala bıyıklı **Hamamcan** çalar, tavanda disko topu döner. Hamamcan ara sıra kabinden tasla
-  soğuk su atar. Hediye atan **göbek taşına yatabilir** ya da **tellak olup** başkalarını keseleyebilir.
+Yaylada tavuklar kanat kanada tutuşup 7/16 aksak ritimle horon teper. Ortada **kemençeci** ve **davulcu**
+yan yana çalar; izleyiciler hediyeyle bu rolleri kapabilir. Kavgalar halkanın altındaki çitli
+**Kavga Meydanı**'nda olur, horon bozulmaz. Tempo yükselince tavuklar meşhur "titreme"ye geçer.
 
-| Tavuk Horonu | Mahalle Kavgası | Hamamcan Disko | Tellak ve köpük |
-|---|---|---|---|
-| ![](ekran/a_horon.png) | ![](ekran/b_kavga.png) | ![](ekran/c_hamam.png) | ![](ekran/d_kopuk.png) |
+| Horon, kemençeci ve davulcu | Mahalle kavgası |
+|---|---|
+| ![](ekran/a_horon.png) | ![](ekran/b_kavga.png) |
 
 ## İzleyici ne yapınca ne olur?
 
 | İzleyici | Oyunda |
 |---|---|
 | Yorum yazar | Kendi adıyla bir tavuk halkaya katılır, yorumu konuşma balonunda çıkar, zıplar |
-| `kavga` yazar | Tavuğu rastgele birine dalar. `kavga @isim` yazarsa o kişiye dalar. Toz bulutu, POW/GÜM, uçuşan tüyler; kaybeden bayılır |
+| `kavga` yazar | Tavuğu rastgele biriyle Kavga Meydanı'na iner. `kavga @isim` yazarsa o kişiyle. Toz bulutu, POW/GÜM, uçuşan tüyler; kaybeden bayılır |
+| `şarkı` yazar | Sıradaki şarkıya geçilir (herkes için 15 sn bekleme). `türkü` ve `müzik` de olur |
 | `yumurta` yazar | Tavuğu gıdaklayarak yumurtlar |
-| `kese` yazar (hamam) | Tellaklardan biri gelip onu keseler. Tellak yoksa "30 jeton at, tellak ol" der |
-| `hamamcan` yazar (hamam) | Hamamcan kabinden ona tasla soğuk su atar |
-| `çıldır` yazar | Tavuğu birkaç saniye çıldırır (20 sn bekleme süresi var) |
+| `çıldır` yazar | Tavuğu birkaç saniye çıldırır (20 sn bekleme) |
+| `davul` / `kemençe` yazar | Tavuğu o çalgının kaç jeton olduğunu söyler |
 | Beğeni | Tempo göstergesi dolar, müzik ve dans hızlanır |
-| Hediye (1+ jeton) | Gönderenin tavuğu ÇILDIRIR: deli gibi koşar, kanat çırpar, tüy saçar. Jeton arttıkça süre uzar |
-| 30+ jeton | Konfeti, herkes zıplar. Hamamcan Disko'da ayrıca **KÖPÜK PARTİSİ** başlar |
-
-### Tavuk Horonu'na özel roller
-
-| Hediye | Rol |
-|---|---|
-| 1-4 jeton | Tavuğu çıldırır |
-| **5-98 jeton** | **Davulcu olur** (3 dk). Tokmakla 2+2+3 vuruşlarında davula vurur |
-| **10-98 jeton** | **Kemençeci olur** (3 dk) |
-| 99+ jeton | **Mahalle kavgası**: tavuklar ikişer ikişer Kavga Meydanı'na iner |
-
-Her çalgıda tek kişi çalar: **son hediye atan çalgıyı kapar**, önceki çalgıcı "Davulumu kaptılar! 😤" diyerek
-halaya döner. Aynı kişi tekrar atarsa süresi uzar. Çalgı boşken NPC Kemençeci Horoz ve Davulcu Horoz çalar.
-Sağdaki kutuda o an kimin çaldığı ya da kaç jetona alınabileceği yazar. `davul` / `kemençe` yazana fiyatı söylenir.
-
-### Hamamcan Disko'ya özel roller
-
-| Hediye | Rol |
-|---|---|
-| 1-4 jeton | Çıldırır, deli gibi dans eder |
-| **5+ jeton** | **Göbek taşına yatar** (60 sn, tekrar atınca uzar). 4 yer var; dolunca en eski kalkar |
-| **30+ jeton** | **Tellak olur** (2 dk): eline kese, omzuna havlu alır. Önce göbek taşında yatanları, sonra "kese" yazanları keseler. Her keseleme +5 puan. En fazla 3 tellak |
-
-Rolleri olanlar kavgaya girmez ("Şimdi işim var!"). Sahne Tavuk Horonu'na dönünce roller biter.
-| 99+ jeton | **MAHALLE KAVGASI** (herkes birbirine girer) veya **TOPLU ÇILGINLIK**. 300+ jetonda ikisi birden |
-| 500+ jeton | Havai fişek ve kalıcı **altın taç**. Altın taçlı tavuk kavgalarda daha güçlüdür |
 | Takip / Paylaşım | Kalpler / yumurta yağmuru |
 
-Ayrıca her 20-30 saniyede bir rastgele iki tavuk kendiliğinden kavgaya tutuşur.
-Hediye gönderenler kavgalarda daha şanslıdır. Lider tablosunda (Kümes Kralları) puanlar görünür.
+## Hediyeler
+
+| Hediye | Oyunda |
+|---|---|
+| 1-4 jeton | Gönderenin tavuğu **çıldırır**: deli gibi koşar, kanat çırpar, tüy saçar |
+| **5-9 jeton** | 🥁 **Davulcu olur** (3 dk). Tokmakla 2+2+3 vuruşlarında davula vurur |
+| **10-98 jeton** | 🎻 **Kemençeci olur** (3 dk). 30 ve üstünde ayrıca konfeti |
+| **99+ jeton** | 🥊 **Mahalle kavgası**: tavuklar ikişer ikişer Kavga Meydanı'na iner |
+| **500+ jeton** | Havai fişek ve kalıcı **altın taç**. Altın taçlı tavuk kavgalarda daha güçlüdür |
+
+Her çalgıda tek kişi çalar: **son hediye atan çalgıyı kapar**, önceki çalgıcı "Davulumu kaptılar! 😤" diyerek
+halaya döner. Aynı kişi tekrar atarsa süresi uzar. Çalgı boşken Kemençeci Horoz ve Davulcu Horoz çalar.
+Çalgıcılar kavgaya girmez.
+
+Ayrıca her 20-30 saniyede bir rastgele iki tavuk kendiliğinden kavgaya tutuşur. Hediye gönderenler kavgalarda
+daha şanslıdır. Lider tablosunda (Kümes Kralları) puanlar görünür.
+
+Jeton eşikleri `public/oyun.js` içinde `DAVUL_JETON` ve `KEMENCE_JETON` sabitlerindedir.
+
+## Şarkılar
+
+Ekranın sağında **ŞİMDİ ÇALIYOR** kutusu var. `şarkı` yazılınca ya da paneldeki **🎵 Şarkı değiştir**
+düğmesine basılınca sıradaki şarkıya geçilir.
+
+- **Kendi türküleriniz:** `public/muzik` klasörüne `.mp3`, `.m4a`, `.ogg` veya `.wav` dosyaları koyun.
+  Dosya adı ekranda şarkı adı olarak görünür (`01 Ben Giderim Batuma.mp3` → "Ben Giderim Batuma";
+  baştaki numara yalnızca sırayı belirler). Oyun açılınca ilk dosya çalar. Dosya ekledikten sonra
+  oyun sayfasını yenileyin.
+- **Hazır horon havaları:** Dosyalardan sonra oyunun kodla çaldığı dört hava gelir: Dik Horon, Sıksara,
+  Tulum Havası ve Ağır Horon. Klasör boşsa oyun bunlarla açılır.
+
+Başkasına ait kayıtları yayında çalmak telif sorununa yol açabilir; TikTok bu durumda yayının sesini kısabilir.
+Mümkünse kendi kayıtlarınızı ya da kullanım izni olan müzikleri kullanın.
 
 ## Kurulum
 
@@ -68,16 +68,18 @@ Hediye gönderenler kavgalarda daha şanslıdır. Lider tablosunda (Kümes Krall
 
 ## Yayına ekleme
 
+- **TikTok LIVE Studio:** Chrome'da `http://localhost:8080` adresini ayrı, dikey bir pencerede açın ve
+  *Pencere yakalama* ile ekleyin. Kamera kaynağı eklemeyin. Müziğin başlaması için oyun ekranına bir kez tıklayın.
+  Oyun penceresini simge durumuna küçültmeyin; küçültülen sayfada animasyon durur.
 - **OBS / Streamlabs:** Kaynak ekle → *Tarayıcı* → URL `http://localhost:8080`, genişlik **720**, yükseklik **1280**.
   "Sesi OBS üzerinden kontrol et" kutusunu işaretlerseniz müzik yayına gider.
-- **TikTok LIVE Studio:** Chrome'da `http://localhost:8080` adresini ayrı bir pencerede açın, pencereyi dikey yapın ve
-  *Pencere yakalama* ile ekleyin. Müziğin başlaması için oyun ekranına bir kez tıklayın.
 
-Kontrol panelini ayrı bir sekmede tutun. Sahne değiştirme, demo modu ve deneme olayları oradadır.
-Yayına çıkmadan önce **Demo** kutusunu açarak oyunu sahte izleyicilerle deneyebilirsiniz.
+Kontrol panelini oyundan ayrı bir pencerede tutun. Şarkı değiştirme, demo modu ve deneme olayları oradadır.
+Yayına çıkmadan önce **Demo** kutusunu açarak oyunu sahte izleyicilerle deneyebilirsiniz; yayında kapatın.
 
-Oyun ekranı kısayolları: **M** sahne değiştir, **D** demo, **S** ses, **1-9** deneme olayları (8: 5 jeton, 9: horonda 10, hamamda 30 jeton).
-Adres sonuna `?mod=hamam` eklenirse Hamamcan Disko ile başlar, `?demo=1` eklenirse demo açık başlar.
+Oyun ekranı kısayolları: **0** şarkı değiştir, **D** demo, **S** ses, **1-9** deneme olayları
+(1 yorum, 2 kavga, 3 beğeni, 4 1 jeton, 5 99 jeton, 6 500 jeton, 7 yumurta, 8 5 jeton, 9 10 jeton).
+Adres sonuna `?demo=1` eklenirse demo açık başlar.
 
 ## Bağlantı sorunları
 
@@ -96,6 +98,7 @@ TikTok'un resmî bir canlı yayın API'si yok. Bağlantı açık kaynak
 server.js          TikTok köprüsü + web sunucusu (port 8080)
 public/index.html  Oyun ekranı (yayına eklenen sayfa)
 public/panel.html  Kontrol paneli
-public/oyun.js     Oyun: tavuklar, dans, kavga, sahneler, arayüz
-public/ses.js      Kodla üretilen müzik (horon ve disko) ve efektler
+public/oyun.js     Oyun: tavuklar, horon, çalgıcılar, kavga meydanı, arayüz
+public/ses.js      Horon havaları, şarkı dosyalarını çalma ve efektler
+public/muzik/      Kendi türkü dosyalarınız
 ```

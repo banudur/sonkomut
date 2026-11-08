@@ -34,12 +34,15 @@ const TIPLER = {
   '.svg': 'image/svg+xml',
   '.mp3': 'audio/mpeg',
   '.ogg': 'audio/ogg',
+  '.m4a': 'audio/mp4',
+  '.wav': 'audio/wav',
 };
 
 const sunucu = http.createServer((req, res) => {
   let yol = decodeURIComponent(new URL(req.url, 'http://x').pathname);
   if (yol === '/') yol = '/index.html';
   if (yol === '/panel') yol = '/panel.html';
+  if (yol === '/muzik-listesi') { muzikListesi(res); return; }
   const dosya = path.normalize(path.join(PUBLIC, yol));
   if (!dosya.startsWith(PUBLIC)) { res.writeHead(403).end(); return; }
   fs.readFile(dosya, (err, veri) => {
@@ -51,6 +54,20 @@ const sunucu = http.createServer((req, res) => {
     res.end(veri);
   });
 });
+
+// public/muzik içindeki şarkı dosyaları ("şarkı" komutuyla sırayla çalınır)
+const MUZIK = path.join(PUBLIC, 'muzik');
+function muzikListesi(res) {
+  let dosyalar = [];
+  try {
+    dosyalar = fs.readdirSync(MUZIK)
+      .filter((d) => /\.(mp3|ogg|m4a|wav)$/i.test(d))
+      .sort((a, b) => a.localeCompare(b, 'tr'))
+      .map((d) => ({ ad: d.replace(/\.[^.]+$/, '').replace(/^\d+[\s._-]*/, '').replace(/[_-]+/g, ' ').trim() || d, url: '/muzik/' + encodeURIComponent(d) }));
+  } catch { /* klasör yoksa boş liste */ }
+  res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
+  res.end(JSON.stringify(dosyalar));
+}
 
 // ---------------------------------------------------------------- WebSocket
 const wss = new WebSocketServer({ server: sunucu, path: '/ws' });
