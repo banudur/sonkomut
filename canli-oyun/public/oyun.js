@@ -38,6 +38,9 @@ const S = {
   hc: { x: 360, y: 650, durum: 'dj', hedef: null, tur: null, t: 0, balon: null, sonraki: 15, yuruyor: false },
   kopuk: 0,
   calgi: { kemence: null, davul: null },
+  davulSov: 0,          // >0 iken davulcu yerde yatıp havada davul çalar (kalan sn)
+  davulSovSonraki: 18,
+  davulSovBekleme: 0,
   demo: false,
   demoSayac: 0,
   izleyici: 0,
@@ -232,6 +235,8 @@ function yorum(kisi, metin) {
     balon(c, `Tellak olmak: ${TELLAK_JETON}+ jeton 🧽`, 3);
   } else if (hamam && /göbek|gobek|yatayım|yatmak/.test(k)) {
     balon(c, `Göbek taşına yatmak: ${YATMA_JETON}+ jeton 🛁`, 3);
+  } else if (!hamam && c.durum === 'calgici' && c.calgi === 'davul' && /şov|sov|yat|yere/.test(k)) {
+    if (!davulSovBaslat(c)) balon(c, S.davulSov > 0 ? 'Zaten yerdeyim! 🥁' : 'Biraz nefesleneyim!');
   } else if (!hamam && /davul|🥁/.test(k)) {
     balon(c, `Davulcu olmak: ${DAVUL_JETON}+ jeton 🥁`, 3);
   } else if (!hamam && /kemen|🎻/.test(k)) {
@@ -674,6 +679,39 @@ function calgiciYap(c, tur) {
   }
 }
 
+// Davulcunun şovu: ara sıra sırtüstü yere yatıp davulu havada çalar
+function davulSovBaslat(kim) {
+  if (S.davulSov > 0) return false;
+  if (kim && S.davulSovBekleme > 0) return false;
+  S.davulSov = 6.5;
+  S.davulSovSonraki = rnd(20, 32);
+  const yer = calgiciYer('davul');
+  parcacik('duman', yer.x, yer.y - 10);
+  parcacik('yazi', yer.x, yer.y - 125, { metin: 'ŞOV!', renk: '#ffa94d', boyut: 34, cizgi: true });
+  const d = S.calgi.davul;
+  if (d) balon(d, sec(['Yerde davul! 🥁', 'Seyredin şimdi!', 'Hoppaaa!']), 2.5);
+  akisEkle(`🥁 ${d ? kisalt(d.ad, 14) : 'Davulcu Horoz'} yere yattı, havada davul çalıyor!`, '#ffa94d');
+  S.tavuklar.forEach((t) => zipla(t, rnd(0, 0.5)));
+  ses.fanfar(false);
+  return true;
+}
+
+function davulSovGuncelle(dt) {
+  S.davulSovBekleme -= dt;
+  if (S.davulSov > 0) {
+    S.davulSov -= dt;
+    S.tempo = Math.min(100, S.tempo + dt * 4);   // seyirci coşar
+    if (S.davulSov <= 0) {
+      const yer = calgiciYer('davul');
+      parcacik('duman', yer.x, yer.y - 10);
+      S.davulSovBekleme = 10;
+    }
+  } else {
+    S.davulSovSonraki -= dt;
+    if (S.davulSovSonraki <= 0) davulSovBaslat(null);
+  }
+}
+
 function calgiBirak(c, laf) {
   if (c.calgi && S.calgi[c.calgi] === c) S.calgi[c.calgi] = null;
   c.durum = 'halka'; c.calgi = null; c.yerde = false; c.rolSure = 0;
@@ -718,6 +756,36 @@ function calgiciCiz(c, tur, npc) {
     ctx.strokeStyle = '#6b4226'; ctx.lineWidth = 2.5;
     ctx.beginPath(); ctx.moveTo(x - 28 + yay, y - 50 * s); ctx.lineTo(x + 24 + yay, y - 36 * s); ctx.stroke();
     if (Math.random() < 0.04 * (1 + S.tempo / 50)) parcacik('yazi', x + rnd(-25, 15), y - 105, { metin: sec(['♪', '♫', '♬']), renk: '#fff', boyut: 24 });
+  } else if (tur === 'davul' && S.davulSov > 0) {
+    // ŞOV: sırtüstü yatar, davulu havaya kaldırıp alttan çalar, ayaklarıyla tempo tutar
+    const vurus = bp < 0.18 ? 1 - bp / 0.18 : 0;
+    const p = { bob: 0, titreme: Math.sin(S.zaman * 40) * vurus * 1.5, egim: 0, kanatSol: 0.3, kanatSag: -0.15 + vurus * 0.25, bacak: Math.sin(S.zaman * 16) * 8, goz: 'mutlu', yatik: true, gozluk: false, donus: 0, agiz: true };
+    // başı dışarı (sağa) gelsin diye aynalanmış çizilir; ortadaki gelinin üstüne taşmaz
+    ctx.save(); ctx.translate(x, 0); ctx.scale(-1, 1); ctx.translate(-x, 0);
+    tavukCiz(ctx, c, x + 30 * s, y, s, p);
+    ctx.restore();
+    // havadaki davul, vuruşlarda sarsılır
+    const dy = y - (78 + vurus * 4) * s;
+    ctx.save(); ctx.translate(x, dy); ctx.scale(s, s); ctx.rotate(Math.sin(S.zaman * 3) * 0.06);
+    ctx.fillStyle = '#c92a2a'; ctx.fillRect(-20, -15, 40, 30);
+    ctx.strokeStyle = '#ffd43b'; ctx.lineWidth = 1.5; ctx.beginPath();
+    for (let i = 0; i <= 8; i++) { const xx = -20 + i * 5; ctx.lineTo(xx, i % 2 ? 13 : -13); }
+    ctx.stroke();
+    for (const yan of [-1, 1]) {
+      ctx.fillStyle = '#f1e3c6'; ctx.strokeStyle = '#6b4226'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.ellipse(yan * 21, 0, 6, 16, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    }
+    ctx.restore();
+    // tokmak alttan yukarı vurur, çubuk öbür yandan
+    const topY = y - (62 - (1 - vurus) * 14) * s;
+    ctx.strokeStyle = '#6b4226'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(x + 4 * s, y - 40 * s); ctx.lineTo(x + 12 * s, topY); ctx.stroke();
+    ctx.fillStyle = '#e9ecef'; ctx.beginPath(); ctx.arc(x + 12 * s, topY, 5 * s, 0, Math.PI * 2); ctx.fill();
+    const cubuk = bas !== 0 && bp < 0.15 ? 0 : 8;
+    ctx.strokeStyle = '#8b5a2b'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(x - 14 * s, y - 40 * s); ctx.lineTo(x - 16 * s, y - (64 - cubuk) * s); ctx.stroke();
+    if (bp < 0.06 && Math.random() < 0.25) parcacik('yazi', x + rnd(0, 45), dy - 30, { metin: sec(['DÜM!', 'TAK!', 'DÜM!']), renk: '#ffa94d', boyut: 22 });
+    if (Math.random() < 0.1) parcacik('yildiz', x + rnd(-40, 40), dy - rnd(0, 30));
   } else {
     // tokmak güçlü vuruşta (2+2+3'ün başları) davula iner
     const vurus = bp < 0.18 ? 1 - bp / 0.18 : 0;
@@ -903,6 +971,7 @@ function guncelle(dt) {
   S.halkaAci += dt * (S.mod === 'horon' ? 0.13 : 0.06) * hiz;
   S.sarsinti = Math.max(0, S.sarsinti - dt);
   S.sarkiBekleme = (S.sarkiBekleme || 0) - dt;
+  if (S.mod === 'horon') davulSovGuncelle(dt);
   S.flas = Math.max(0, S.flas - dt * 1.5);
 
   yerleriHesapla();
@@ -1923,7 +1992,7 @@ function etiketCiz(c) {
   const yatik = c.durum === 'ko' || (c.durum === 'yatiyor' && c.yatti);
   let pz = yatik ? (hamam ? 48 : 30) : hamam ? 112 : 92;
   let s2 = s;
-  if (c.durum === 'calgici' && c.yerde) { s2 = 1.12; pz = c.calgi === 'gelin' || c.calgi === 'damat' ? 132 : 100; }
+  if (c.durum === 'calgici' && c.yerde) { s2 = 1.12; pz = c.calgi === 'gelin' || c.calgi === 'damat' ? 132 : c.calgi === 'davul' && S.davulSov > 0 ? 112 : 100; }
   const y = c.y - pz * s2;
   const x = yatik && hamam ? c.x - 45 * s : c.x;
   const renk = c.altinTac ? '#ffd43b' : c.durum === 'tellak' || c.durum === 'yatiyor' || c.durum === 'calgici' ? '#ffc078' : c.hediyeci ? '#ffe8a3' : c.npc ? '#dee2e6' : '#ffffff';

@@ -28,7 +28,7 @@ yanlarında **kemençeci** ve **davulcu** çalar; izleyiciler hediyeyle bu rolle
 | Hediye | Oyunda |
 |---|---|
 | 1-4 jeton | Gönderenin tavuğu **çıldırır**: deli gibi koşar, kanat çırpar, tüy saçar |
-| **5-9 jeton** | 🥁 **Davulcu olur** (3 dk). Tokmakla 2+2+3 vuruşlarında davula vurur |
+| **5-9 jeton** | 🥁 **Davulcu olur** (3 dk). Tokmakla 2+2+3 vuruşlarında davula vurur. Davulcuyken `şov` yazarsa yere yatıp havada davul çalar |
 | **10-19 jeton** | 🎻 **Kemençeci olur** (3 dk) |
 | **20-29 jeton** | 🤵 **Damat olur** (3 dk): siyah yelek, papyon, yaka çiçeği |
 | **30-98 jeton** | 👰 **Gelin olur** (3 dk): duvak, taç, gelinlik, kırmızı kuşak, buket. Ayrıca konfeti |
@@ -40,6 +40,10 @@ Her rolde tek kişi olur: **son hediye atan rolü kapar**, öncekinin tavuğu "G
 Damat Horoz, Kemençeci Horoz ve Davulcu Horoz yerinde durur. Gelin ve damat kanat kanada salınır,
 aralarından kalpler uçar. **İkisi de izleyiciyse "DÜĞÜN VAR!"** kutlaması olur (konfeti, kalpler, fanfar).
 Rol sahipleri kavgaya girmez.
+
+**Davulcu şovu:** Davulcu her 20-30 saniyede bir sırtüstü yere yatar, davulu havaya kaldırıp alttan çalar,
+ayaklarıyla tempo tutar ("ŞOV!", "DÜM! TAK!"). Şov boyunca tavuklar coşar ve tempo yükselir. Davulcu rolündeki
+izleyici `şov` yazarak da başlatabilir (şovlar arasında 10 sn bekleme var).
 
 Ayrıca her 20-30 saniyede bir rastgele iki tavuk kendiliğinden kavgaya tutuşur. Hediye gönderenler kavgalarda
 daha şanslıdır. Lider tablosunda (Kümes Kralları) puanlar görünür.
