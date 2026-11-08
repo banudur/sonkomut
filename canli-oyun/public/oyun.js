@@ -2077,7 +2077,7 @@ function komutIsle(m) {
 }
 
 function sunucuyaBaglan() {
-  if (location.protocol === 'file:') return;
+  if (location.protocol === 'file:' || window.KUMES_CEVRIMDISI) return;
   const ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws`);
   ws.onmessage = (e) => {
     let m;
@@ -2090,6 +2090,7 @@ function sunucuyaBaglan() {
 
 // ------------------------------------------------------------------ başlat
 function boyutla() {
+  if (window.KUMES_GOMULU) return; // sayfaya gömülüyken boyutu CSS belirler
   const oran = Math.min(window.innerWidth / W, window.innerHeight / H);
   tuval.style.width = `${W * oran}px`;
   tuval.style.height = `${H * oran}px`;
@@ -2105,6 +2106,7 @@ function sesiBaslat() {
 window.addEventListener('pointerdown', sesiBaslat);
 window.addEventListener('keydown', (e) => {
   sesiBaslat();
+  if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return; // yazı kutusunda kısayol yok
   const k = e.key.toLowerCase();
   const test = { id: 'test_' + rint(1, 6), ad: sec(DEMO_ADLAR) };
   if (k === 'm') modDegistir(S.mod === 'horon' ? 'hamam' : 'horon');
@@ -2123,7 +2125,7 @@ window.addEventListener('keydown', (e) => {
 
 const params = new URLSearchParams(location.search);
 if (params.get('mod') === 'hamam') { S.mod = 'hamam'; MERKEZ.y = HALKALAR.hamam.y; ses.modAyarla('hamam'); }
-if (params.get('demo') === '1') S.demo = true;
+if (params.get('demo') === '1' || window.KUMES_DEMO) S.demo = true;
 npcEkle();
 sesiBaslat();
 sunucuyaBaglan();
