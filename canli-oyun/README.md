@@ -2,8 +2,10 @@
 
 İzleyicilerin yorum, beğeni ve hediyeleriyle yönettiği tavuk oyunu. İki sahnesi var:
 
-- **Tavuk Horonu**: Yaylada tavuklar el (kanat) ele tutuşup 7/16 aksak ritimle horon teper.
-  Ortada Kemençeci Horoz çalar. Tempo yükselince tavuklar meşhur "titreme"ye geçer.
+- **Tavuk Horonu** (açılışta gelen sahne): Yaylada tavuklar kanat kanada tutuşup 7/16 aksak ritimle horon teper.
+  Ortada **kemençeci** ve **davulcu** yan yana çalar; izleyiciler hediyeyle bu rolleri kapabilir.
+  Kavgalar halkanın altındaki çitli **Kavga Meydanı**'nda olur, horon bozulmaz.
+  Tempo yükselince tavuklar meşhur "titreme"ye geçer.
 - **Hamamcan Disko**: Hamamda disko! Bu sahnede herkes **peştemallı bir adam** olur (nalın, havlu, bıyık, göbek).
   DJ kabininde pala bıyıklı **Hamamcan** çalar, tavanda disko topu döner. Hamamcan ara sıra kabinden tasla
   soğuk su atar. Hediye atan **göbek taşına yatabilir** ya da **tellak olup** başkalarını keseleyebilir.
@@ -25,6 +27,19 @@
 | Beğeni | Tempo göstergesi dolar, müzik ve dans hızlanır |
 | Hediye (1+ jeton) | Gönderenin tavuğu ÇILDIRIR: deli gibi koşar, kanat çırpar, tüy saçar. Jeton arttıkça süre uzar |
 | 30+ jeton | Konfeti, herkes zıplar. Hamamcan Disko'da ayrıca **KÖPÜK PARTİSİ** başlar |
+
+### Tavuk Horonu'na özel roller
+
+| Hediye | Rol |
+|---|---|
+| 1-4 jeton | Tavuğu çıldırır |
+| **5-98 jeton** | **Davulcu olur** (3 dk). Tokmakla 2+2+3 vuruşlarında davula vurur |
+| **10-98 jeton** | **Kemençeci olur** (3 dk) |
+| 99+ jeton | **Mahalle kavgası**: tavuklar ikişer ikişer Kavga Meydanı'na iner |
+
+Her çalgıda tek kişi çalar: **son hediye atan çalgıyı kapar**, önceki çalgıcı "Davulumu kaptılar! 😤" diyerek
+halaya döner. Aynı kişi tekrar atarsa süresi uzar. Çalgı boşken NPC Kemençeci Horoz ve Davulcu Horoz çalar.
+Sağdaki kutuda o an kimin çaldığı ya da kaç jetona alınabileceği yazar. `davul` / `kemençe` yazana fiyatı söylenir.
 
 ### Hamamcan Disko'ya özel roller
 
@@ -61,7 +76,7 @@ Hediye gönderenler kavgalarda daha şanslıdır. Lider tablosunda (Kümes Krall
 Kontrol panelini ayrı bir sekmede tutun. Sahne değiştirme, demo modu ve deneme olayları oradadır.
 Yayına çıkmadan önce **Demo** kutusunu açarak oyunu sahte izleyicilerle deneyebilirsiniz.
 
-Oyun ekranı kısayolları: **M** sahne değiştir, **D** demo, **S** ses, **1-9** deneme olayları (8: 5 jeton, 9: 30 jeton).
+Oyun ekranı kısayolları: **M** sahne değiştir, **D** demo, **S** ses, **1-9** deneme olayları (8: 5 jeton, 9: horonda 10, hamamda 30 jeton).
 Adres sonuna `?mod=hamam` eklenirse Hamamcan Disko ile başlar, `?demo=1` eklenirse demo açık başlar.
 
 ## Bağlantı sorunları

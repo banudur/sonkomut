@@ -7,9 +7,11 @@ const tuval = document.getElementById('oyun');
 const ctx = tuval.getContext('2d');
 const ses = new Ses();
 
-const MERKEZ = { x: 360, y: 820 };
+const MERKEZ = { x: 360, y: 770 };
+// Tavuk Horonu'nda kavgalar halkanın altındaki çitli meydanda olur
+const ARENA = { x: 360, y: 1058, rx: 235, ry: 72 };
 const HALKALAR = {
-  horon: { y: 820, dis: { rx: 300, ry: 165 }, ic: { rx: 195, ry: 105 } },
+  horon: { y: 770, dis: { rx: 300, ry: 140 }, ic: { rx: 195, ry: 88 } },
   hamam: { y: 890, dis: { rx: 310, ry: 140 }, ic: { rx: 228, ry: 100 } },
 };
 const DIS_KAPASITE = 30;
@@ -35,6 +37,7 @@ const S = {
   sonrakiOtoKavga: 25,
   hc: { x: 360, y: 650, durum: 'dj', hedef: null, tur: null, t: 0, balon: null, sonraki: 15, yuruyor: false },
   kopuk: 0,
+  calgi: { kemence: null, davul: null },
   demo: false,
   demoSayac: 0,
   izleyici: 0,
@@ -141,6 +144,7 @@ function tavukGetir(kisi, olustur = true) {
 }
 
 function tavukCikar(c) {
+  if (c.durum === 'calgici') calgiBirak(c);
   for (let i = 0; i < 14; i++) parcacik('tuy', c.x, c.y - 30, { renk: c.renk[0] });
   parcacik('duman', c.x, c.y - 20);
   S.tavuklar.splice(S.tavuklar.indexOf(c), 1);
@@ -227,6 +231,10 @@ function yorum(kisi, metin) {
     balon(c, `Tellak olmak: ${TELLAK_JETON}+ jeton 🧽`, 3);
   } else if (hamam && /göbek|gobek|yatayım|yatmak/.test(k)) {
     balon(c, `Göbek taşına yatmak: ${YATMA_JETON}+ jeton 🛁`, 3);
+  } else if (!hamam && /davul|🥁/.test(k)) {
+    balon(c, `Davulcu olmak: ${DAVUL_JETON}+ jeton 🥁`, 3);
+  } else if (!hamam && /kemen|🎻/.test(k)) {
+    balon(c, `Kemençeci olmak: ${KEMENCE_JETON}+ jeton 🎻`, 3);
   } else if (/kavga|dövüş|dovus|kapış|kapis|savaş|savas|kafa at|🥊|👊/.test(k)) {
     kavgaIstegi(c, hedefBul(k, c));
   } else if (/yumurta|🥚/.test(k)) {
@@ -262,6 +270,8 @@ function hediye(kisi, jeton, hediyeAdi, adet) {
   let sonuc = 'ÇILDIRDI!';
   if (S.mod === 'hamam' && jeton >= TELLAK_JETON) { rolUygula(c, 'tellak'); sonuc = 'TELLAK OLDU!'; }
   else if (S.mod === 'hamam' && jeton >= YATMA_JETON) { rolUygula(c, 'yat'); sonuc = 'GÖBEK TAŞINA YATTI!'; }
+  else if (S.mod === 'horon' && jeton >= KEMENCE_JETON && jeton < 99) { rolUygula(c, 'kemence'); sonuc = 'KEMENÇECİ OLDU!'; }
+  else if (S.mod === 'horon' && jeton >= DAVUL_JETON && jeton < 99) { rolUygula(c, 'davul'); sonuc = 'DAVULCU OLDU!'; }
   else { cildir(c, sure); balon(c, cilginLaf(true), 3); }
   akisEkle(`🎁 ${kisalt(kisi.ad, 14)}: ${adet > 1 ? adet + 'x ' : ''}${hediyeAdi} → ${sonuc}`, '#ffd43b');
   for (let i = 0; i < 8 + Math.min(40, jeton); i++) parcacik('tuy', c.x, c.y - 30, { renk: c.renk[0] });
@@ -279,7 +289,7 @@ function hediye(kisi, jeton, hediyeAdi, adet) {
     ses.fanfar(false);
   }
   if (jeton >= 99) {
-    const tur = jeton >= 300 ? 'ikisi' : sec(['kavga', 'cilgin']);
+    const tur = jeton >= 300 ? 'ikisi' : S.mod === 'horon' ? 'kavga' : sec(['kavga', 'cilgin']);
     if (tur === 'kavga' || tur === 'ikisi') {
       mansetGoster('MAHALLE KAVGASI!', `${kisalt(kisi.ad, 18)} ortalığı karıştırdı`, '#ff6b6b');
       topluKavga(c);
@@ -344,7 +354,7 @@ function cilginLaf(buyuk) {
 }
 
 function cildir(c, sure) {
-  if (c.durum === 'tellak' || c.durum === 'yatiyor') { c.rolSure += sure; return; }
+  if (c.durum === 'tellak' || c.durum === 'yatiyor' || c.durum === 'calgici') { c.rolSure += sure; return; }
   if (c.durum === 'kavga' || c.durum === 'ko') { c.bekleyenCilgin = Math.max(c.bekleyenCilgin || 0, sure); return; }
   c.durum = 'cilgin';
   c.cilgin = Math.max(c.cilgin, sure);
@@ -369,6 +379,7 @@ function yumurtla(c) {
 function kavgaIstegi(c, hedef) {
   if (c.kavgaBekleme > 0) { balon(c, 'Biraz soluklanayım...'); return; }
   if (c.durum === 'kavga' || c.durum === 'ko') return;
+  if (c.durum === 'calgici') { balon(c, 'Çalıyorum, sonra! 🎶'); return; }
   if (c.durum === 'tellak' || c.durum === 'yatiyor') { balon(c, c.durum === 'tellak' ? 'Şimdi işim var! 🧽' : 'Kalkamam, yatıyorum! 😌'); return; }
   if (S.kavgalar.length >= 5) { balon(c, 'Sıradayım! 🥊'); return; }
   let rakip = hedef;
@@ -383,6 +394,13 @@ function kavgaIstegi(c, hedef) {
 }
 
 function kavgaYeri() {
+  if (S.mod === 'horon') {
+    for (let deneme = 0; deneme < 15; deneme++) {
+      const x = ARENA.x + rnd(-170, 170), y = ARENA.y + rnd(-22, 22);
+      if (!S.kavgalar.some((k) => Math.abs(k.x - x) < 120)) return { x, y };
+    }
+    return { x: ARENA.x + rnd(-170, 170), y: ARENA.y + rnd(-22, 22) };
+  }
   for (let deneme = 0; deneme < 12; deneme++) {
     const yan = Math.random() < 0.5 ? -1 : 1;
     const x = MERKEZ.x + yan * rnd(90, 230);
@@ -411,7 +429,7 @@ function topluKavga(tetikleyen) {
     karisik.splice(karisik.indexOf(tetikleyen), 1);
     karisik.unshift(tetikleyen);
   }
-  for (let i = 0; i + 1 < karisik.length && S.kavgalar.length < 6; i += 2) kavgaBaslat(karisik[i], karisik[i + 1]);
+  for (let i = 0; i + 1 < karisik.length && S.kavgalar.length < (S.mod === 'horon' ? 4 : 6); i += 2) kavgaBaslat(karisik[i], karisik[i + 1]);
 }
 
 function kavgaGuncelle(k, dt) {
@@ -589,9 +607,110 @@ function rolBitir(c, laf) {
 }
 
 function rolUygula(c, rol) {
-  if (S.mod !== 'hamam') return;
+  const horonRolu = rol === 'davul' || rol === 'kemence';
+  if (horonRolu !== (S.mod === 'horon')) return;
   if (c.durum === 'kavga' || c.durum === 'ko' || c.durum === 'zafer') { c.bekleyenRol = rol; return; }
-  if (rol === 'yat') gobekTasinaYatir(c); else tellakYap(c);
+  if (rol === 'yat') gobekTasinaYatir(c);
+  else if (rol === 'tellak') tellakYap(c);
+  else calgiciYap(c, rol);
+}
+
+// ---- Tavuk Horonu: kemençeci ve davulcu rolleri (son hediye atan çalgıyı kapar)
+const DAVUL_JETON = 5, KEMENCE_JETON = 10;
+const CALGI_SURE = 180;
+const CALGI_AD = { kemence: 'Kemençeci', davul: 'Davulcu' };
+const CALGI_IKON = { kemence: '🎻', davul: '🥁' };
+const NPC_CALGICI = {
+  kemence: { ad: 'Kemençeci Horoz', renk: ['#ffffff', '#d9d2c5'], kiyafet: 1, yazma: '#000', altinTac: false },
+  davul: { ad: 'Davulcu Horoz', renk: ['#c9773b', '#a95f2c'], kiyafet: 1, yazma: '#000', altinTac: false },
+};
+function calgiciYer(tur) { return { x: MERKEZ.x + (tur === 'kemence' ? -62 : 62), y: MERKEZ.y + 5 }; }
+
+function calgiciYap(c, tur) {
+  if (c.durum === 'calgici' && c.calgi === tur) { c.rolSure += CALGI_SURE; balon(c, 'Daha çalarım! 🎶'); return; }
+  if (c.durum === 'calgici') calgiBirak(c);
+  const eski = S.calgi[tur];
+  if (eski) calgiBirak(eski, tur === 'davul' ? 'Davulumu kaptılar! 😤' : 'Kemençemi aldılar! 😤');
+  S.calgi[tur] = c;
+  c.durum = 'calgici'; c.calgi = tur; c.rolSure = CALGI_SURE; c.cilgin = 0; c.yerde = false;
+  balon(c, tur === 'davul' ? 'Davul bende! Güm güm! 🥁' : 'Kemençe bende! 🎻', 3);
+  mansetGoster(tur === 'davul' ? 'YENİ DAVULCU!' : 'YENİ KEMENÇECİ!', `${kisalt(c.ad, 18)} sahneye çıktı ${CALGI_IKON[tur]}`, tur === 'davul' ? '#ff922b' : '#ffe066');
+  akisEkle(`${CALGI_IKON[tur]} ${kisalt(c.ad, 14)} ${tur === 'davul' ? 'davulcu' : 'kemençeci'} oldu!`, '#ffc078');
+  ses.fanfar(false);
+}
+
+function calgiBirak(c, laf) {
+  if (c.calgi && S.calgi[c.calgi] === c) S.calgi[c.calgi] = null;
+  c.durum = 'halka'; c.calgi = null; c.yerde = false; c.rolSure = 0;
+  if (laf) balon(c, laf, 2.5);
+}
+
+function calgiciGuncelle(c, dt) {
+  c.rolSure -= dt;
+  if (c.rolSure <= 0) { calgiBirak(c, 'Mesai bitti, halaya dönüyorum!'); return; }
+  const yer = calgiciYer(c.calgi);
+  const dx = yer.x - c.x, dy = yer.y - c.y, d = Math.hypot(dx, dy);
+  if (d > 4) {
+    const a = Math.min(d, 320 * dt + d * dt * 2);
+    c.x += (dx / d) * a; c.y += (dy / d) * a;
+    c.yuruyor = true; c.yerde = false;
+  } else {
+    c.x = yer.x; c.y = yer.y; c.yuruyor = false; c.yerde = true;
+  }
+  if (c.yerde && !c.balon && Math.random() < dt * 0.06) {
+    balon(c, c.calgi === 'davul' ? sec(['Güm güm güm!', 'Tempoyu artırın!', 'Hoppaaa!']) : sec(['Ula horon!', 'Titret bakayım!', 'Hadi uşaklar!']), 2);
+  }
+}
+
+// Çalgıcıyı (izleyici ya da NPC) çalgısıyla birlikte çizer
+function calgiciCiz(c, tur, npc) {
+  const yer = calgiciYer(tur);
+  const x = yer.x, y = yer.y, s = 1.12;
+  const t = S.dansZamani;
+  const olcu = 0.595;
+  const ic = ((t / olcu) % 1) * 7;
+  const bas = ic < 2 ? 0 : ic < 4 ? 2 : 4;
+  const bp = (ic - bas) / (bas === 4 ? 3 : 2);
+  if (tur === 'kemence') {
+    const p = { bob: Math.abs(Math.sin(t * 5.3)) * 3, titreme: 0, egim: Math.sin(t * 3) * 0.08, kanatSol: -0.3, kanatSag: 0.6, bacak: Math.sin(t * 10.6) > 0.7 ? 5 : 0, goz: 'mutlu', yatik: false, gozluk: false, donus: 0, agiz: false };
+    tavukCiz(ctx, c, x, y, s, p);
+    ctx.save(); ctx.translate(x - 4, y - (42 + p.bob) * s); ctx.rotate(-0.25); ctx.scale(s, s);
+    ctx.fillStyle = '#7a3e1d'; ctx.beginPath(); ctx.ellipse(0, 0, 9, 20, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#5a2c12'; ctx.fillRect(-3, -40, 6, 24);
+    ctx.fillStyle = '#3b1d0c'; ctx.beginPath(); ctx.ellipse(0, -42, 6, 4, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+    const yay = Math.sin(t * 10.6) * 14;
+    ctx.strokeStyle = '#6b4226'; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.moveTo(x - 28 + yay, y - 50 * s); ctx.lineTo(x + 24 + yay, y - 36 * s); ctx.stroke();
+    if (Math.random() < 0.04 * (1 + S.tempo / 50)) parcacik('yazi', x + rnd(-25, 15), y - 105, { metin: sec(['♪', '♫', '♬']), renk: '#fff', boyut: 24 });
+  } else {
+    // tokmak güçlü vuruşta (2+2+3'ün başları) davula iner
+    const vurus = bp < 0.18 ? 1 - bp / 0.18 : 0;
+    const p = { bob: Math.sin(bp * Math.PI) * 4, titreme: 0, egim: 0, kanatSol: 0.5, kanatSag: -0.9 + vurus * 1.2, bacak: bas === 0 && bp < 0.3 ? 4 : 0, goz: 'mutlu', yatik: false, gozluk: false, donus: 0, agiz: vurus > 0.5 };
+    tavukCiz(ctx, c, x, y, s, p);
+    // davul (önden: iki yanda deri, ortada kırmızı gövde)
+    const dy = y - (30 + p.bob * 0.5) * s;
+    ctx.save(); ctx.translate(x, dy); ctx.scale(s, s);
+    ctx.fillStyle = '#c92a2a'; ctx.fillRect(-20, -15, 40, 30);
+    ctx.strokeStyle = '#ffd43b'; ctx.lineWidth = 1.5; ctx.beginPath();
+    for (let i = 0; i <= 8; i++) { const xx = -20 + i * 5; ctx.lineTo(xx, i % 2 ? 13 : -13); }
+    ctx.stroke();
+    for (const yan of [-1, 1]) {
+      ctx.fillStyle = '#f1e3c6'; ctx.strokeStyle = '#6b4226'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.ellipse(yan * 21, 0, 6, 16, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    }
+    // tokmak (sağ) ve çubuk (sol)
+    const ta = -0.9 + vurus * 0.9;
+    ctx.save(); ctx.translate(26, -22); ctx.rotate(ta);
+    ctx.strokeStyle = '#6b4226'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, 24); ctx.stroke();
+    ctx.fillStyle = '#e9ecef'; ctx.beginPath(); ctx.arc(0, 26, 5, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+    ctx.strokeStyle = '#8b5a2b'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(-34, -18 + (bas !== 0 && bp < 0.15 ? 8 : 0)); ctx.lineTo(-22, -4); ctx.stroke();
+    ctx.restore();
+    if (bas === 0 && bp < 0.06 && Math.random() < 0.25) parcacik('yazi', x + 30, dy - 25, { metin: 'DÜM!', renk: '#ffa94d', boyut: 20 });
+  }
+  if (npc) etiket(ctx, `${CALGI_IKON[tur]} ${c.ad}`, x, y - 112 * s, '#ffe066', 12);
 }
 
 function gobekTasinaYatir(c) {
@@ -734,6 +853,7 @@ function guncelle(dt) {
     if (c.yumurtliyor > 0) c.yumurtliyor -= dt;
     if (c.ziplama > 0) c.ziplama -= dt;
     if (c.balon) { c.balon.sure -= dt; if (c.balon.sure <= 0) c.balon = null; }
+    if (c.durum === 'calgici') { calgiciGuncelle(c, dt); continue; }
     if (c.durum === 'tellak') { tellakGuncelle(c, dt); continue; }
     if (c.durum === 'yatiyor') { yatanGuncelle(c, dt); continue; }
     if (c.durum === 'yikaniyor') { c.yuruyor = false; continue; }
@@ -753,7 +873,7 @@ function guncelle(dt) {
       }
       c.x += c.vx * dt; c.y += c.vy * dt;
       // alanın içinde tut
-      const dx = (c.x - MERKEZ.x) / 330, dy = (c.y - (MERKEZ.y + 20)) / 215;
+      const dx = (c.x - MERKEZ.x) / 330, dy = (c.y - (MERKEZ.y + 20)) / (S.mod === 'horon' ? 175 : 215);
       if (dx * dx + dy * dy > 1) {
         c.vx = -c.vx + (MERKEZ.x - c.x) * 0.8; c.vy = -c.vy + (MERKEZ.y - c.y) * 0.8;
         c.x += c.vx * dt * 2; c.y += c.vy * dt * 2;
@@ -930,7 +1050,10 @@ function modDegistir(m) {
   mansetGoster(m === 'horon' ? 'TAVUK HORONU' : 'HAMAMCAN DİSKO', m === 'horon' ? 'Yaylada horon başlıyor!' : 'Kurnalar titresin! 🪩', m === 'horon' ? '#9be15d' : '#f783ac');
   S.parcaciklar = S.parcaciklar.filter((p) => p.tur !== 'buhar' && p.tur !== 'kopuk');
   S.kopuk = 0;
-  S.tavuklar.forEach((c) => { if (['tellak', 'yatiyor', 'yikaniyor'].includes(c.durum)) rolBitir(c); });
+  S.tavuklar.forEach((c) => {
+    if (['tellak', 'yatiyor', 'yikaniyor'].includes(c.durum)) rolBitir(c);
+    if (c.durum === 'calgici') calgiBirak(c);
+  });
   MERKEZ.y = HALKALAR[m].y;
   hamamcanSifirla();
   if (m === 'hamam') hcBalon('Hamamcan geldi, disko başladı!', 3);
@@ -1001,12 +1124,40 @@ function yaylaCiz(g) {
   gr = g.createRadialGradient(MERKEZ.x, MERKEZ.y, 50, MERKEZ.x, MERKEZ.y, 360);
   gr.addColorStop(0, '#b08a5a'); gr.addColorStop(0.75, '#9c7a4c'); gr.addColorStop(1, 'rgba(156,122,76,0)');
   g.fillStyle = gr;
-  g.beginPath(); g.ellipse(MERKEZ.x, MERKEZ.y + 10, 360, 220, 0, 0, Math.PI * 2); g.fill();
+  g.beginPath(); g.ellipse(MERKEZ.x, MERKEZ.y + 10, 355, 190, 0, 0, Math.PI * 2); g.fill();
+  // kavga meydanı: çitle çevrili toprak
+  const A = ARENA;
+  gr = g.createRadialGradient(A.x, A.y, 20, A.x, A.y, A.rx);
+  gr.addColorStop(0, '#a47148'); gr.addColorStop(1, '#8a5a34');
+  g.fillStyle = gr;
+  g.beginPath(); g.ellipse(A.x, A.y, A.rx, A.ry, 0, 0, Math.PI * 2); g.fill();
+  const kazik = (a) => ({ x: A.x + Math.cos(a) * (A.rx + 6), y: A.y + Math.sin(a) * (A.ry + 4) });
+  const KAZIK = 26;
+  for (const yy of [-18, -8]) {
+    g.strokeStyle = '#7a4a24'; g.lineWidth = 3; g.beginPath();
+    for (let i = 0; i <= KAZIK; i++) { const k = kazik((i / KAZIK) * Math.PI * 2); g.lineTo(k.x, k.y + yy); }
+    g.stroke();
+  }
+  for (let i = 0; i < KAZIK; i++) {
+    const k = kazik((i / KAZIK) * Math.PI * 2);
+    g.fillStyle = '#6b3f1d'; g.fillRect(k.x - 3, k.y - 24, 6, 26);
+    g.fillStyle = '#8b5a2b'; g.fillRect(k.x - 3, k.y - 24, 6, 4);
+  }
+  // tabela
+  g.save(); g.translate(A.x - A.rx + 30, A.y - A.ry - 28); g.rotate(-0.06);
+  g.fillStyle = '#6b3f1d'; g.fillRect(-3, 0, 6, 34);
+  g.fillStyle = '#c08a52'; g.beginPath(); g.roundRect(-70, -26, 140, 30, 6); g.fill();
+  g.strokeStyle = '#6b3f1d'; g.lineWidth = 2; g.stroke();
+  g.font = '900 16px Impact, "Arial Black", sans-serif'; g.textAlign = 'center'; g.fillStyle = '#3b1d0c';
+  g.fillText('🥊 KAVGA MEYDANI', 0, -5);
+  g.restore();
   // çiçekler
   for (let i = 0; i < 70; i++) {
     const x = Math.random() * W, y = 620 + Math.random() * 640;
-    const dx = (x - MERKEZ.x) / 360, dy = (y - MERKEZ.y) / 220;
+    const dx = (x - MERKEZ.x) / 360, dy = (y - MERKEZ.y) / 200;
     if (dx * dx + dy * dy < 1.05) continue;
+    const ax = (x - A.x) / (A.rx + 20), ay = (y - A.y) / (A.ry + 30);
+    if (ax * ax + ay * ay < 1) continue;
     g.fillStyle = sec(['#fff', '#ffe066', '#f783ac', '#b197fc']);
     g.beginPath(); g.arc(x, y, 3, 0, Math.PI * 2); g.fill();
   }
@@ -1530,7 +1681,11 @@ function ciz() {
 
   // derinlik sırasına göre: tavuklar, kavga bulutları, yumurtalar, merkez karakter
   const cizilecek = [];
-  for (const c of S.tavuklar) if (!(c.durum === 'kavga' && c.kavga && c.kavga.faz === 'kavga')) cizilecek.push({ y: c.y, tur: 't', c });
+  for (const c of S.tavuklar) {
+    if (c.durum === 'kavga' && c.kavga && c.kavga.faz === 'kavga') continue;
+    if (c.durum === 'calgici' && c.yerde) continue; // merkezCiz çalgısıyla çizer
+    cizilecek.push({ y: c.y, tur: 't', c });
+  }
   for (const k of S.kavgalar) if (k.faz === 'kavga') cizilecek.push({ y: k.y, tur: 'k', k });
   for (const e of S.yumurtalar) cizilecek.push({ y: e.y, tur: 'e', e });
   cizilecek.push({ y: S.mod === 'hamam' ? HC_DJ.y : MERKEZ.y + 5, tur: 'm' });
@@ -1585,25 +1740,12 @@ function kolCizgileri() {
 }
 
 function merkezCiz() {
-  const x = MERKEZ.x, y = MERKEZ.y + 5;
-  const merkez = { renk: ['#ffffff', '#d9d2c5'], kiyafet: 1, yazma: '#000', altinTac: false };
-  const t = S.dansZamani;
   if (S.mod === 'horon') {
-    const p = { bob: Math.abs(Math.sin(t * 5.3)) * 3, titreme: 0, egim: Math.sin(t * 3) * 0.08, kanatSol: -0.3, kanatSag: 0.6, bacak: Math.sin(t * 10.6) > 0.7 ? 5 : 0, goz: 'mutlu', yatik: false, gozluk: false, donus: 0, agiz: false };
-    tavukCiz(ctx, merkez, x, y, 1.25, p);
-    // kemençe
-    ctx.save(); ctx.translate(x - 4, y - 42 - p.bob * 1.25); ctx.rotate(-0.25);
-    ctx.fillStyle = '#7a3e1d'; ctx.beginPath(); ctx.ellipse(0, 0, 9, 20, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#5a2c12'; ctx.fillRect(-3, -40, 6, 24);
-    ctx.fillStyle = '#3b1d0c'; ctx.beginPath(); ctx.ellipse(0, -42, 6, 4, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.restore();
-    // yay
-    const yay = Math.sin(t * 10.6) * 16;
-    ctx.strokeStyle = '#6b4226'; ctx.lineWidth = 2.5;
-    ctx.beginPath(); ctx.moveTo(x - 30 + yay, y - 55); ctx.lineTo(x + 26 + yay, y - 40); ctx.stroke();
-    etiket(ctx, '🎻 Kemençeci Horoz', x, y - 125, '#ffe066', 14);
-    // notalar
-    if (Math.random() < 0.05 * (1 + S.tempo / 50)) parcacik('yazi', x + rnd(-30, 30), y - 110, { metin: sec(['♪', '♫', '♬']), renk: '#fff', boyut: 26 });
+    for (const tur of ['kemence', 'davul']) {
+      const kisi = S.calgi[tur];
+      if (!kisi) calgiciCiz(NPC_CALGICI[tur], tur, true);
+      else if (kisi.yerde) calgiciCiz(kisi, tur, false);
+    }
   } else {
     hamamcanCiz();
   }
@@ -1686,8 +1828,8 @@ function etiketCiz(c) {
   const pz = yatik ? (hamam ? 48 : 30) : hamam ? 112 : 92;
   const y = c.y - pz * s;
   const x = yatik && hamam ? c.x - 45 * s : c.x;
-  const renk = c.altinTac ? '#ffd43b' : c.durum === 'tellak' || c.durum === 'yatiyor' ? '#ffc078' : c.hediyeci ? '#ffe8a3' : c.npc ? '#dee2e6' : '#ffffff';
-  const rol = c.durum === 'tellak' ? '🧽' : c.durum === 'yatiyor' ? '🛁' : '';
+  const renk = c.altinTac ? '#ffd43b' : c.durum === 'tellak' || c.durum === 'yatiyor' || c.durum === 'calgici' ? '#ffc078' : c.hediyeci ? '#ffe8a3' : c.npc ? '#dee2e6' : '#ffffff';
+  const rol = c.durum === 'tellak' ? '🧽' : c.durum === 'yatiyor' ? '🛁' : c.durum === 'calgici' ? CALGI_IKON[c.calgi] : '';
   if (c.durum !== 'kavga' || !c.kavga || c.kavga.faz !== 'kavga') {
     etiket(ctx, rol + (c.takipci ? '❤️' : '') + kisalt(c.ad, 12), x, y, renk, 12);
   }
@@ -1850,12 +1992,23 @@ function arayuzCiz() {
     ctx.font = `800 16px ${font}`; ctx.fillStyle = '#ffc078';
     ctx.fillText(`🛁 Göbek taşı ${yatan}/${YATAKLAR.length}`, gx, gy + 156);
     ctx.fillText(`🧽 Tellak ${tellak}/${MAKS_TELLAK}`, gx, gy + 182);
+  } else {
+    ctx.fillStyle = 'rgba(20,20,30,0.75)';
+    ctx.beginPath(); ctx.roundRect(gx - 88, gy + 132, 176, 62, 14); ctx.fill();
+    ctx.font = `800 15px ${font}`;
+    [['kemence', KEMENCE_JETON], ['davul', DAVUL_JETON]].forEach(([tur, jeton], i) => {
+      const kisi = S.calgi[tur];
+      ctx.fillStyle = kisi ? '#ffc078' : '#adb5bd';
+      ctx.fillText(`${CALGI_IKON[tur]} ${kisi ? kisalt(kisi.ad, 11) : `${jeton} jeton: sen ol!`}`, gx, gy + 156 + i * 26);
+    });
   }
 
   // olay akışı
   ctx.textAlign = 'left';
-  S.akis.forEach((a, i) => {
-    const y = 1100 + i * 30;
+  const akis = S.mod === 'horon' ? S.akis.slice(-3) : S.akis;
+  const akisY = S.mod === 'horon' ? 1162 : 1100;
+  akis.forEach((a, i) => {
+    const y = akisY + i * 28;
     ctx.globalAlpha = Math.min(1, a.sure);
     ctx.font = `700 16px ${font}`;
     const w = Math.min(W - 32, ctx.measureText(a.metin).width + 20);
@@ -1873,7 +2026,8 @@ function arayuzCiz() {
     ctx.font = `800 14px ${font}`;
     ctx.fillText(`🌹 1+ çıldır  •  🛁 ${YATMA_JETON}+ GÖBEK TAŞINA YAT  •  🧽 ${TELLAK_JETON}+ TELLAK OL  •  🎁 99+ kavga`, W / 2, H - 12);
   } else {
-    ctx.fillText('🌹 1+ çıldır  •  💎 30+ konfeti  •  🎁 99+ MAHALLE KAVGASI  •  🚀 500+ ALTIN TAÇ', W / 2, H - 12);
+    ctx.font = `800 14px ${font}`;
+    ctx.fillText(`🌹 1+ çıldır  •  🥁 ${DAVUL_JETON}+ DAVULCU OL  •  🎻 ${KEMENCE_JETON}+ KEMENÇECİ OL  •  🎁 99+ MAHALLE KAVGASI`, W / 2, H - 12);
   }
 
   // manşet
@@ -1964,7 +2118,7 @@ window.addEventListener('keydown', (e) => {
   else if (k === '6') olayIsle({ tur: 'hediye', kisi: test, jeton: 500, hediye: 'Roket', adet: 1 });
   else if (k === '7') olayIsle({ tur: 'yorum', kisi: test, metin: S.mod === 'hamam' ? 'kese' : 'yumurta' });
   else if (k === '8') olayIsle({ tur: 'hediye', kisi: test, jeton: 5, hediye: 'Blue Bead', adet: 1 });
-  else if (k === '9') olayIsle({ tur: 'hediye', kisi: test, jeton: 30, hediye: 'Donat', adet: 1 });
+  else if (k === '9') olayIsle({ tur: 'hediye', kisi: test, jeton: S.mod === 'horon' ? 10 : 30, hediye: 'Donat', adet: 1 });
 });
 
 const params = new URLSearchParams(location.search);
