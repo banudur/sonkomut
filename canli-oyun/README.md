@@ -41,10 +41,14 @@ Damat Horoz, Kemençeci Horoz ve Davulcu Horoz yerinde durur. Gelin ve damat kan
 aralarından kalpler uçar. **İkisi de izleyiciyse "DÜĞÜN VAR!"** kutlaması olur (konfeti, kalpler, fanfar).
 Rol sahipleri kavgaya girmez.
 
-**Düğün kamerası:** Arada bir sahne düğün videocusu gibi yakına çekilir; köşelerde kamera çerçevesi ve yanıp sönen
-● REC görünür. Her 25-40 saniyede bir rastgele bir izleyicinin tavuğuna yaklaşır (tavuk kameraya el sallar),
-davulcu yerde çalarken ona, kavgada Kavga Meydanı'na, düğün olunca gelin ile damada döner. Üstteki tablolar
+**Düğün kamerası:** Arada bir sahne düğün videocusu gibi yakına çekilir; köşelerde kamera çerçevesi, yanıp sönen
+● REC ve kamera numarası (KAM 1/2/3) görünür. Her 12-20 saniyede bir şunlardan birini çeker: bir izleyicinin
+tavuğu (kameraya el sallar), gelin ile damat, halkayı baştan sona tarayan panorama, kemençeci ya da davulcu.
+Davulcu yerde çalarken ona, kavgada Kavga Meydanı'na, düğün olunca gelin ile damada döner. Her çekim farklı
+bir açıyla yapılır: sabit, eğik, yavaş yaklaşan, yandan kayan ya da aşağıdan yukarı tarayan. Üstteki tablolar
 sabit kalır. Kontrol panelindeki **🎥 Düğün kamerası** kutusuyla kapatılabilir.
+
+Halka dönmez; tavuklar yerinde sağa sola salınır. Gelin, damat ve çalgıcıların arkası boş bırakılır.
 
 **Davulcu şovu:** Davulcu her 20-30 saniyede bir sırtüstü yere yatar, davulu havaya kaldırıp alttan çalar,
 ayaklarıyla tempo tutar ("ŞOV!", "DÜM! TAK!"). Şov boyunca tavuklar coşar ve tempo yükselir. Davulcu rolündeki

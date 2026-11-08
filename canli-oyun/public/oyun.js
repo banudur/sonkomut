@@ -38,7 +38,7 @@ const S = {
   hc: { x: 360, y: 650, durum: 'dj', hedef: null, tur: null, t: 0, balon: null, sonraki: 15, yuruyor: false },
   kopuk: 0,
   calgi: { kemence: null, davul: null },
-  kamera: { x: W / 2, y: H / 2, z: 1, cekim: null, bekleme: 8, seyirciSonraki: 18, acik: true },
+  kamera: { x: W / 2, y: H / 2, z: 1, rot: 0, cekim: null, bekleme: 8, seyirciSonraki: 14, acik: true },
   davulSov: 0,          // >0 iken davulcu yerde yatıp havada davul çalar (kalan sn)
   davulSovSonraki: 18,
   davulSovBekleme: 0,
@@ -188,6 +188,16 @@ function yerleriHesapla() {
       const j = i - dis;
       a = -S.halkaAci * 1.3 + (j / ic) * Math.PI * 2;
       rx = hk.ic.rx; ry = hk.ic.ry;
+    }
+    if (S.mod === 'horon') {
+      // Gelin, damat ve çalgıcıların arkası boş kalsın: halka dönmez, arkadaki yay boş bırakılır,
+      // tavuklar horondaki gibi yerinde sağa sola salınır.
+      const dista = i < dis;
+      const adet = dista ? dis : ic;
+      const j = dista ? i : i - dis;
+      const bosluk = dista ? 0.62 : 0.5;
+      const salinim = Math.sin((S.dansZamani / ses.olcuSuresi()) * Math.PI) * 0.025;
+      a = -Math.PI / 2 + bosluk + ((j + 0.5) / adet) * (Math.PI * 2 - 2 * bosluk) + salinim;
     }
     c.halkaSira = i < dis ? i : i - dis;
     c.halkaIc = i >= dis;
@@ -645,7 +655,7 @@ const SAHNE_ROLLERI = ['kemence', 'damat', 'gelin', 'davul'];   // soldan sağa 
 const ROL_JETON = { kemence: KEMENCE_JETON, davul: DAVUL_JETON, damat: DAMAT_JETON, gelin: GELIN_JETON };
 const CALGI_AD = { kemence: 'Kemençeci', davul: 'Davulcu', damat: 'Damat', gelin: 'Gelin' };
 const CALGI_IKON = { kemence: '🎻', davul: '🥁', damat: '🤵', gelin: '👰' };
-const ROL_YER_X = { kemence: -132, damat: -42, gelin: 42, davul: 132 };
+const ROL_YER_X = { kemence: -152, damat: -40, gelin: 40, davul: 152 };
 const ROL_YAZI = {
   kemence: { aldi: 'Kemençe bende! 🎻', kapildi: 'Kemençemi aldılar! 😤', manset: 'YENİ KEMENÇECİ!', renk: '#ffe066', oldu: 'kemençeci', laf: ['Ula horon!', 'Titret bakayım!', 'Hadi uşaklar!'] },
   davul: { aldi: 'Davul bende! Güm güm! 🥁', kapildi: 'Davulumu kaptılar! 😤', manset: 'YENİ DAVULCU!', renk: '#ff922b', oldu: 'davulcu', laf: ['Güm güm güm!', 'Tempoyu artırın!', 'Hoppaaa!'] },
@@ -685,14 +695,55 @@ function calgiciYap(c, tur) {
 
 // ---- Düğün kameramanı: ara sıra seyircilere, davulcu şovuna, kavgaya ve gelin-damada yakın çekim yapar.
 // Öncelik: 3 davul şovu / düğün, 2 kavga, 1 seyirci. Çekimler arasında kısa bir genel plan beklemesi var.
-function cekimBaslat(tur, odak, z, sure, yazi, oncelik) {
+// Çekim tarzları ("açılar"): z çarpanı başı→sonu, kayma (dx, dy) başı→sonu, eğiklik (r)
+const CEKIM_STILLERI = [
+  { ad: 'sabit' },
+  { ad: 'egik', r: 0.07 },
+  { ad: 'egik', r: -0.07 },
+  { ad: 'zoom', z0: 0.72, z1: 1.12 },
+  { ad: 'kayan', dx0: -70, dx1: 70 },
+  { ad: 'kayan', dx0: 70, dx1: -70, r: 0.04 },
+  { ad: 'tarama', dy0: 55, dy1: -40, z0: 0.95, z1: 1.05 },
+];
+const ara = (a, b, f) => a + (b - a) * f;
+
+function cekimBaslat(tur, odak, z, sure, yazi, oncelik, stil) {
   const k = S.kamera;
   if (!k.acik) return false;
   if (k.cekim && k.cekim.oncelik >= oncelik) return false;
   if (!k.cekim && k.bekleme > 0 && oncelik < 3) return false;
-  if (!odak()) return false;
-  k.cekim = { tur, odak, z, sure, yazi, oncelik, t: 0 };
+  if (!odak(0)) return false;
+  k.cekim = { tur, odak, z, sure, yazi, oncelik, t: 0, stil: stil || sec(CEKIM_STILLERI), kam: rint(1, 3) };
   return true;
+}
+
+// Boştayken arada bir: seyirci, gelin-damat, halka panoraması, kemençeci ya da davulcu
+function rastgeleCekim() {
+  const r = Math.random();
+  if (r < 0.34) return seyirciCek();
+  if (r < 0.56) {
+    const ok = cekimBaslat('cift', () => ({ x: MERKEZ.x, y: MERKEZ.y - 62 }), 2.4, 5, 'Gelin ile damat 💍', 1);
+    if (ok) {
+      for (let i = 0; i < 6; i++) parcacik('kalp', MERKEZ.x + rnd(-30, 30), MERKEZ.y - rnd(90, 130));
+      if (S.calgi.gelin) balon(S.calgi.gelin, sec(['Bize bakın! 😍', 'Çok mutluyuz! 💐']), 2.5);
+      if (S.calgi.damat) balon(S.calgi.damat, sec(['Hayırlı olsun! 🤵', 'Gelinim çok güzel!']), 2.5);
+    }
+    return;
+  }
+  if (r < 0.78) {
+    // halka panoraması: önden soldan sağa tarar
+    const hk = HALKALAR.horon.dis;
+    cekimBaslat('panorama', (f) => {
+      const a = ara(Math.PI * 0.88, Math.PI * 0.12, f);
+      return { x: MERKEZ.x + Math.cos(a) * hk.rx, y: MERKEZ.y + Math.sin(a) * hk.ry - 70 };
+    }, 1.9, 6.5, 'Halaydan görüntüler', 1, { ad: 'panorama', r: rnd(-0.03, 0.03) });
+    return;
+  }
+  const tur = Math.random() < 0.5 ? 'kemence' : 'davul';
+  if (tur === 'davul' && S.davulSov > 0) return;
+  const yer = calgiciYer(tur);
+  const ok = cekimBaslat(tur, () => ({ x: yer.x, y: yer.y - 58 }), 2.3, 4.5, tur === 'kemence' ? 'Kemençe konuşuyor 🎻' : 'Davulcunun tokmağı 🥁', 1);
+  if (ok && S.calgi[tur]) balon(S.calgi[tur], sec(['Çekin beni! 😎', 'Hoppaaa!', 'Ula bakun!']), 2);
 }
 
 function seyirciCek() {
@@ -711,21 +762,34 @@ function seyirciCek() {
 function kameraGuncelle(dt) {
   const k = S.kamera;
   k.bekleme -= dt;
-  let hx = W / 2, hy = H / 2, hz = 1;
+  let hx = W / 2, hy = H / 2, hz = 1, hr = 0;
   if (k.cekim) {
     k.cekim.t += dt;
-    const o = k.cekim.t <= k.cekim.sure ? k.cekim.odak() : null;
+    const f = Math.min(1, k.cekim.t / k.cekim.sure);
+    const o = k.cekim.t <= k.cekim.sure ? k.cekim.odak(f) : null;
     if (!o) { k.cekim = null; k.bekleme = 7; }
-    else { hx = o.x; hy = o.y; hz = k.cekim.z; }
+    else {
+      const st = k.cekim.stil;
+      hx = o.x + ara(st.dx0 || 0, st.dx1 || 0, f);
+      hy = o.y + ara(st.dy0 || 0, st.dy1 || 0, f);
+      hz = k.cekim.z * ara(st.z0 || 1, st.z1 || 1, f);
+      hr = st.r || 0;
+    }
   } else if (k.acik) {
     k.seyirciSonraki -= dt;
-    if (k.seyirciSonraki <= 0) { k.seyirciSonraki = rnd(25, 40); seyirciCek(); }
+    if (k.seyirciSonraki <= 0) { k.seyirciSonraki = rnd(12, 20); if (S.mod === 'horon') rastgeleCekim(); else seyirciCek(); }
   }
   const a = Math.min(1, dt * 2.2);
   k.z += (hz - k.z) * a;
   if (Math.abs(k.z - 1) < 0.002 && hz === 1) k.z = 1;
-  // görüntü sahnenin dışına taşmasın
-  const yw = W / (2 * k.z), yh = H / (2 * k.z);
+  k.rot += (hr - k.rot) * Math.min(1, dt * 4);
+  // eğiklik sadece yeterince yakındayken (yoksa kenarlar görünür)
+  const maksRot = Math.max(0, k.z - 1.3) * 0.12;
+  k.rot = Math.max(-maksRot, Math.min(maksRot, k.rot));
+  if (Math.abs(k.rot) < 0.0005) k.rot = 0;
+  // görüntü sahnenin dışına taşmasın (eğiklik payıyla)
+  const cs = Math.abs(Math.cos(k.rot)), sn = Math.abs(Math.sin(k.rot));
+  const yw = Math.min(W / 2, (W / 2 * cs + H / 2 * sn) / k.z), yh = Math.min(H / 2, (W / 2 * sn + H / 2 * cs) / k.z);
   hx = Math.max(yw, Math.min(W - yw, hx));
   hy = Math.max(yh, Math.min(H - yh, hy));
   k.x += (hx - k.x) * a; k.y += (hy - k.y) * a;
@@ -747,7 +811,7 @@ function kameraCerceve() {
   }
   const yazi = k.cekim ? k.cekim.yazi : '';
   ctx.font = '800 16px "Segoe UI", "Noto Sans", Arial, sans-serif';
-  const metin = `REC   🎥 ${yazi}`;
+  const metin = `REC   KAM ${k.cekim ? k.cekim.kam : 1}   🎥 ${yazi}`;
   const w = ctx.measureText(metin).width + 44;
   const bx = W / 2 - w / 2, by = 1100;
   ctx.fillStyle = 'rgba(15,12,25,0.78)';
@@ -1927,7 +1991,10 @@ function ciz() {
   ctx.save();
   if (S.sarsinti > 0) ctx.translate(rnd(-1, 1) * S.sarsinti * 14, rnd(-1, 1) * S.sarsinti * 14);
   const kam = S.kamera;
-  if (kam.z !== 1) { ctx.translate(W / 2, H / 2); ctx.scale(kam.z, kam.z); ctx.translate(-kam.x, -kam.y); }
+  if (kam.z !== 1 || kam.rot !== 0) {
+    ctx.fillStyle = '#4e9a35'; ctx.fillRect(-20, -20, W + 40, H + 40);
+    ctx.translate(W / 2, H / 2); ctx.scale(kam.z, kam.z); ctx.rotate(kam.rot); ctx.translate(-kam.x, -kam.y);
+  }
   ctx.drawImage(sahneHazirla(S.mod), 0, 0);
   if (S.mod === 'hamam') hamamIsiklari(ctx);
 
