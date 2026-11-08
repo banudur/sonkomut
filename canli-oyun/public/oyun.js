@@ -11,7 +11,7 @@ const MERKEZ = { x: 360, y: 770 };
 // Tavuk Horonu'nda kavgalar halkanın altındaki çitli meydanda olur
 const ARENA = { x: 360, y: 1058, rx: 235, ry: 72 };
 const HALKALAR = {
-  horon: { y: 770, dis: { rx: 300, ry: 140 }, ic: { rx: 195, ry: 88 } },
+  horon: { y: 770, dis: { rx: 305, ry: 140 }, ic: { rx: 222, ry: 92 } },
   hamam: { y: 890, dis: { rx: 310, ry: 140 }, ic: { rx: 228, ry: 100 } },
 };
 const DIS_KAPASITE = 30;
@@ -236,6 +236,10 @@ function yorum(kisi, metin) {
     balon(c, `Davulcu olmak: ${DAVUL_JETON}+ jeton 🥁`, 3);
   } else if (!hamam && /kemen|🎻/.test(k)) {
     balon(c, `Kemençeci olmak: ${KEMENCE_JETON}+ jeton 🎻`, 3);
+  } else if (!hamam && /\bgelin\b|👰/.test(k)) {
+    balon(c, `Gelin olmak: ${GELIN_JETON}+ jeton 👰`, 3);
+  } else if (!hamam && /damat|🤵/.test(k)) {
+    balon(c, `Damat olmak: ${DAMAT_JETON}+ jeton 🤵`, 3);
   } else if (/kavga|dövüş|dovus|kapış|kapis|savaş|savas|kafa at|🥊|👊/.test(k)) {
     kavgaIstegi(c, hedefBul(k, c));
   } else if (/yumurta|🥚/.test(k)) {
@@ -279,6 +283,8 @@ function hediye(kisi, jeton, hediyeAdi, adet) {
   let sonuc = 'ÇILDIRDI!';
   if (S.mod === 'hamam' && jeton >= TELLAK_JETON) { rolUygula(c, 'tellak'); sonuc = 'TELLAK OLDU!'; }
   else if (S.mod === 'hamam' && jeton >= YATMA_JETON) { rolUygula(c, 'yat'); sonuc = 'GÖBEK TAŞINA YATTI!'; }
+  else if (S.mod === 'horon' && jeton >= GELIN_JETON && jeton < 99) { rolUygula(c, 'gelin'); sonuc = 'GELİN OLDU!'; }
+  else if (S.mod === 'horon' && jeton >= DAMAT_JETON && jeton < 99) { rolUygula(c, 'damat'); sonuc = 'DAMAT OLDU!'; }
   else if (S.mod === 'horon' && jeton >= KEMENCE_JETON && jeton < 99) { rolUygula(c, 'kemence'); sonuc = 'KEMENÇECİ OLDU!'; }
   else if (S.mod === 'horon' && jeton >= DAVUL_JETON && jeton < 99) { rolUygula(c, 'davul'); sonuc = 'DAVULCU OLDU!'; }
   else { cildir(c, sure); balon(c, cilginLaf(true), 3); }
@@ -616,7 +622,7 @@ function rolBitir(c, laf) {
 }
 
 function rolUygula(c, rol) {
-  const horonRolu = rol === 'davul' || rol === 'kemence';
+  const horonRolu = SAHNE_ROLLERI.includes(rol);
   if (horonRolu !== (S.mod === 'horon')) return;
   if (c.durum === 'kavga' || c.durum === 'ko' || c.durum === 'zafer') { c.bekleyenRol = rol; return; }
   if (rol === 'yat') gobekTasinaYatir(c);
@@ -624,28 +630,48 @@ function rolUygula(c, rol) {
   else calgiciYap(c, rol);
 }
 
-// ---- Tavuk Horonu: kemençeci ve davulcu rolleri (son hediye atan çalgıyı kapar)
-const DAVUL_JETON = 5, KEMENCE_JETON = 10;
+// ---- Tavuk Horonu sahne rolleri: kemençeci, davulcu, damat ve gelin (son hediye atan rolü kapar)
+const DAVUL_JETON = 5, KEMENCE_JETON = 10, DAMAT_JETON = 20, GELIN_JETON = 30;
 const CALGI_SURE = 180;
-const CALGI_AD = { kemence: 'Kemençeci', davul: 'Davulcu' };
-const CALGI_IKON = { kemence: '🎻', davul: '🥁' };
+const SAHNE_ROLLERI = ['kemence', 'damat', 'gelin', 'davul'];   // soldan sağa dizilişleri
+const ROL_JETON = { kemence: KEMENCE_JETON, davul: DAVUL_JETON, damat: DAMAT_JETON, gelin: GELIN_JETON };
+const CALGI_AD = { kemence: 'Kemençeci', davul: 'Davulcu', damat: 'Damat', gelin: 'Gelin' };
+const CALGI_IKON = { kemence: '🎻', davul: '🥁', damat: '🤵', gelin: '👰' };
+const ROL_YER_X = { kemence: -132, damat: -42, gelin: 42, davul: 132 };
+const ROL_YAZI = {
+  kemence: { aldi: 'Kemençe bende! 🎻', kapildi: 'Kemençemi aldılar! 😤', manset: 'YENİ KEMENÇECİ!', renk: '#ffe066', oldu: 'kemençeci', laf: ['Ula horon!', 'Titret bakayım!', 'Hadi uşaklar!'] },
+  davul: { aldi: 'Davul bende! Güm güm! 🥁', kapildi: 'Davulumu kaptılar! 😤', manset: 'YENİ DAVULCU!', renk: '#ff922b', oldu: 'davulcu', laf: ['Güm güm güm!', 'Tempoyu artırın!', 'Hoppaaa!'] },
+  damat: { aldi: 'Damat benim! 🤵', kapildi: 'Damatlık elimden gitti! 😤', manset: 'YENİ DAMAT!', renk: '#74c0fc', oldu: 'damat', laf: ['Gelini kaçırmayın!', 'Ula düğün var!', 'Halaya durun!'] },
+  gelin: { aldi: 'Gelin benim! 👰', kapildi: 'Gelinliğimi kaptılar! 😭', manset: 'YENİ GELİN!', renk: '#f783ac', oldu: 'gelin', laf: ['Hoş geldiniz! 💐', 'Takılar nerede?', 'Oynayın bakalım!'] },
+};
 const NPC_CALGICI = {
   kemence: { ad: 'Kemençeci Horoz', renk: ['#ffffff', '#d9d2c5'], kiyafet: 1, yazma: '#000', altinTac: false },
   davul: { ad: 'Davulcu Horoz', renk: ['#c9773b', '#a95f2c'], kiyafet: 1, yazma: '#000', altinTac: false },
+  damat: { ad: 'Damat Horoz', renk: ['#8c4a2f', '#6e3823'], kiyafet: 1, yazma: '#000', altinTac: false },
+  gelin: { ad: 'Gelin Tavuk', renk: ['#fff3d6', '#ecd9ad'], kiyafet: 0, yazma: '#000', altinTac: false },
 };
-function calgiciYer(tur) { return { x: MERKEZ.x + (tur === 'kemence' ? -62 : 62), y: MERKEZ.y + 5 }; }
+function calgiciYer(tur) { return { x: MERKEZ.x + ROL_YER_X[tur], y: MERKEZ.y + 5 }; }
 
 function calgiciYap(c, tur) {
-  if (c.durum === 'calgici' && c.calgi === tur) { c.rolSure += CALGI_SURE; balon(c, 'Daha çalarım! 🎶'); return; }
+  const yazi = ROL_YAZI[tur];
+  if (c.durum === 'calgici' && c.calgi === tur) { c.rolSure += CALGI_SURE; balon(c, 'Süre uzadı! 🎶'); return; }
   if (c.durum === 'calgici') calgiBirak(c);
   const eski = S.calgi[tur];
-  if (eski) calgiBirak(eski, tur === 'davul' ? 'Davulumu kaptılar! 😤' : 'Kemençemi aldılar! 😤');
+  if (eski) calgiBirak(eski, yazi.kapildi);
   S.calgi[tur] = c;
   c.durum = 'calgici'; c.calgi = tur; c.rolSure = CALGI_SURE; c.cilgin = 0; c.yerde = false;
-  balon(c, tur === 'davul' ? 'Davul bende! Güm güm! 🥁' : 'Kemençe bende! 🎻', 3);
-  mansetGoster(tur === 'davul' ? 'YENİ DAVULCU!' : 'YENİ KEMENÇECİ!', `${kisalt(c.ad, 18)} sahneye çıktı ${CALGI_IKON[tur]}`, tur === 'davul' ? '#ff922b' : '#ffe066');
-  akisEkle(`${CALGI_IKON[tur]} ${kisalt(c.ad, 14)} ${tur === 'davul' ? 'davulcu' : 'kemençeci'} oldu!`, '#ffc078');
+  balon(c, yazi.aldi, 3);
+  akisEkle(`${CALGI_IKON[tur]} ${kisalt(c.ad, 14)} ${yazi.oldu} oldu!`, '#ffc078');
   ses.fanfar(false);
+  // gelin ve damat ikisi de izleyiciyse düğün kutlaması
+  if ((tur === 'gelin' || tur === 'damat') && S.calgi.gelin && S.calgi.damat) {
+    mansetGoster('DÜĞÜN VAR!', `💍 ${kisalt(S.calgi.damat.ad, 12)} ❤️ ${kisalt(S.calgi.gelin.ad, 12)} 💍`, '#f783ac');
+    konfeti(160);
+    ses.fanfar(true);
+    for (let i = 0; i < 12; i++) parcacik('kalp', MERKEZ.x + rnd(-60, 60), MERKEZ.y - rnd(60, 120));
+  } else {
+    mansetGoster(yazi.manset, `${kisalt(c.ad, 18)} sahneye çıktı ${CALGI_IKON[tur]}`, yazi.renk);
+  }
 }
 
 function calgiBirak(c, laf) {
@@ -667,7 +693,7 @@ function calgiciGuncelle(c, dt) {
     c.x = yer.x; c.y = yer.y; c.yuruyor = false; c.yerde = true;
   }
   if (c.yerde && !c.balon && Math.random() < dt * 0.06) {
-    balon(c, c.calgi === 'davul' ? sec(['Güm güm güm!', 'Tempoyu artırın!', 'Hoppaaa!']) : sec(['Ula horon!', 'Titret bakayım!', 'Hadi uşaklar!']), 2);
+    balon(c, sec(ROL_YAZI[c.calgi].laf), 2);
   }
 }
 
@@ -719,7 +745,32 @@ function calgiciCiz(c, tur, npc) {
     ctx.restore();
     if (bas === 0 && bp < 0.06 && Math.random() < 0.25) parcacik('yazi', x + 30, dy - 25, { metin: 'DÜM!', renk: '#ffa94d', boyut: 20 });
   }
-  if (npc) etiket(ctx, `${CALGI_IKON[tur]} ${c.ad}`, x, y - 112 * s, '#ffe066', 12);
+  if (tur === 'gelin' || tur === 'damat') {
+    // gelin ve damat karşılıklı salınır; içteki kanatlarıyla tutuşurlar
+    const yan = tur === 'damat' ? 1 : -1;            // eşine dönük taraf
+    const salin = Math.sin((t / olcu) * Math.PI);
+    const p = { bob: Math.sin(bp * Math.PI) * 4, titreme: 0, egim: yan * salin * 0.09, kanatSol: 0.2, kanatSag: 0.2, bacak: bas === 4 ? Math.sin(bp * Math.PI) * 5 * yan : 0, goz: 'mutlu', yatik: false, gozluk: false, donus: 0, agiz: false };
+    if (tur === 'damat') { p.kanatSag = -0.15; p.kanatSol = -0.9 + Math.sin(bp * Math.PI) * 0.4; }
+    else { p.kanatSol = -0.15; p.kanatSag = 0.55; }
+    if (tur === 'damat') {
+      // tutuşan kanatlar (eşlerin arasında)
+      const gx = calgiciYer('gelin').x;
+      ctx.strokeStyle = c.renk[1]; ctx.lineWidth = 6; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(x + 22 * s, y - (38 + p.bob) * s); ctx.quadraticCurveTo((x + gx) / 2, y - (42 + p.bob) * s, gx - 22 * s, y - (38 + p.bob) * s); ctx.stroke();
+    }
+    tavukCiz(ctx, { ...c, kiyafet: tur === 'damat' ? 1 : 2, [tur]: true }, x, y, s, p);
+    if (tur === 'gelin') {
+      // çiçek buketi (dış kanatta)
+      const bx = x + 34 * s, by = y - (30 + p.bob) * s;
+      ctx.strokeStyle = '#2b8a3e'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx - 2, by + 12); ctx.stroke();
+      [['#ff8fab', -4, -3], ['#fff', 3, -4], ['#ffd43b', 0, -9], ['#f783ac', 5, -9], ['#fff', -5, -9]].forEach(([r, dx, dy]) => {
+        ctx.fillStyle = r; ctx.beginPath(); ctx.arc(bx + dx, by + dy, 3.6, 0, Math.PI * 2); ctx.fill();
+      });
+      if (Math.random() < 0.018) parcacik('kalp', MERKEZ.x + rnd(-20, 20), y - 115);
+    }
+  }
+  const etiketY = tur === 'gelin' || tur === 'damat' ? y - 132 * s : y - 100 * s;
+  if (npc) etiket(ctx, `${CALGI_IKON[tur]} ${c.ad}`, x, etiketY, '#ffe066', 12);
 }
 
 function gobekTasinaYatir(c) {
@@ -1297,6 +1348,12 @@ function tavukCiz(g, c, x, y, s, p) {
   g.translate(p.titreme, 0);
   g.rotate(p.egim);
 
+  // gelin duvağı (arkada, yere kadar)
+  if (c.gelin) {
+    g.fillStyle = 'rgba(255,255,255,0.75)';
+    g.beginPath(); g.moveTo(-10, -78); g.quadraticCurveTo(-34, -40, -30, -4); g.lineTo(30, -4); g.quadraticCurveTo(34, -40, 10, -78); g.closePath(); g.fill();
+    g.strokeStyle = 'rgba(200,200,220,0.8)'; g.lineWidth = 1; g.stroke();
+  }
   // kuyruk tüyleri (arkada)
   g.fillStyle = c.renk[1];
   for (let i = -1; i <= 1; i++) { g.beginPath(); g.ellipse(i * 12, -54, 6, 14, i * 0.5, 0, Math.PI * 2); g.fill(); }
@@ -1328,15 +1385,35 @@ function tavukCiz(g, c, x, y, s, p) {
     g.beginPath(); g.moveTo(-20, -44); g.quadraticCurveTo(-6, -30, -10, -15); g.lineTo(-18, -22); g.closePath(); g.fill();
     g.beginPath(); g.moveTo(20, -44); g.quadraticCurveTo(6, -30, 10, -15); g.lineTo(18, -22); g.closePath(); g.fill();
     g.strokeStyle = '#d4af37'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(-8, -30); g.quadraticCurveTo(0, -24, 8, -30); g.stroke();
-  } else if (S.mod === 'horon') {
+  } else if (S.mod === 'horon' && c.kiyafet === 0) {
     g.fillStyle = c.yazma;
     g.beginPath(); g.ellipse(0, -22, 19, 8, 0, 0, Math.PI); g.fill();
-  } else {
+  } else if (S.mod !== 'horon') {
     // peştemal: kırmızı-beyaz çizgili
     g.save(); g.beginPath(); g.ellipse(0, -34, 22, 21, 0, 0, Math.PI * 2); g.clip();
     const ana = c.kiyafet ? '#c92a2a' : '#1971c2';
     for (let i = 0; i < 6; i++) { g.fillStyle = i % 2 ? '#fff' : ana; g.fillRect(-24, -30 + i * 3.2, 48, 3.2); }
     g.restore();
+  }
+
+  if (c.gelin) {
+    // gelinlik: dantelli beyaz etek ve kırmızı kuşak
+    g.fillStyle = '#ffffff';
+    g.beginPath(); g.moveTo(-17, -36); g.lineTo(17, -36); g.lineTo(25, -10); g.quadraticCurveTo(0, -4, -25, -10); g.closePath(); g.fill();
+    g.strokeStyle = 'rgba(160,160,190,0.7)'; g.lineWidth = 1; g.stroke();
+    g.fillStyle = 'rgba(170,170,200,0.6)';
+    for (let i = -3; i <= 3; i++) { g.beginPath(); g.arc(i * 7, -10, 1.6, 0, Math.PI * 2); g.fill(); }
+    g.fillStyle = '#e03131'; g.fillRect(-18, -39, 36, 5);
+    g.beginPath(); g.moveTo(4, -36); g.lineTo(9, -24); g.lineTo(12, -36); g.closePath(); g.fill();
+  }
+  if (c.damat) {
+    // papyon ve yaka çiçeği
+    g.fillStyle = '#111';
+    g.beginPath(); g.moveTo(0, -42); g.lineTo(-8, -46); g.lineTo(-8, -38); g.closePath(); g.fill();
+    g.beginPath(); g.moveTo(0, -42); g.lineTo(8, -46); g.lineTo(8, -38); g.closePath(); g.fill();
+    g.beginPath(); g.arc(0, -42, 2.2, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#e03131'; g.beginPath(); g.arc(-12, -34, 3.4, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#2b8a3e'; g.fillRect(-12.5, -31, 1.5, 5);
   }
 
   // kafa
@@ -1358,6 +1435,15 @@ function tavukCiz(g, c, x, y, s, p) {
     g.beginPath(); g.ellipse(0, -76, 16, 9, 0, 0, Math.PI * 2); g.fill();
     g.beginPath(); g.ellipse(4, -84, 10, 7, 0.3, 0, Math.PI * 2); g.fill();
     g.strokeStyle = '#dee2e6'; g.lineWidth = 1; g.beginPath(); g.moveTo(-12, -78); g.quadraticCurveTo(0, -72, 12, -79); g.stroke();
+  }
+  if (c.gelin) {
+    // gelin tacı ve başı örten duvak
+    g.fillStyle = 'rgba(255,255,255,0.6)';
+    g.beginPath(); g.ellipse(0, -74, 17, 7, 0, Math.PI, Math.PI * 2); g.fill();
+    g.strokeStyle = '#ced4da'; g.lineWidth = 2;
+    g.beginPath(); g.arc(0, -70, 11, Math.PI * 1.15, Math.PI * 1.85); g.stroke();
+    g.fillStyle = '#e7f5ff';
+    [-7, 0, 7].forEach((dx) => { g.beginPath(); g.arc(dx, dx === 0 ? -83 : -80, 2, 0, Math.PI * 2); g.fill(); });
   }
   // altın taç
   if (c.altinTac) {
@@ -1751,7 +1837,7 @@ function kolCizgileri() {
 
 function merkezCiz() {
   if (S.mod === 'horon') {
-    for (const tur of ['kemence', 'davul']) {
+    for (const tur of SAHNE_ROLLERI) {
       const kisi = S.calgi[tur];
       if (!kisi) calgiciCiz(NPC_CALGICI[tur], tur, true);
       else if (kisi.yerde) calgiciCiz(kisi, tur, false);
@@ -1835,8 +1921,10 @@ function etiketCiz(c) {
   const s = derinlikOlcek(c.y);
   const hamam = S.mod === 'hamam';
   const yatik = c.durum === 'ko' || (c.durum === 'yatiyor' && c.yatti);
-  const pz = yatik ? (hamam ? 48 : 30) : hamam ? 112 : 92;
-  const y = c.y - pz * s;
+  let pz = yatik ? (hamam ? 48 : 30) : hamam ? 112 : 92;
+  let s2 = s;
+  if (c.durum === 'calgici' && c.yerde) { s2 = 1.12; pz = c.calgi === 'gelin' || c.calgi === 'damat' ? 132 : 100; }
+  const y = c.y - pz * s2;
   const x = yatik && hamam ? c.x - 45 * s : c.x;
   const renk = c.altinTac ? '#ffd43b' : c.durum === 'tellak' || c.durum === 'yatiyor' || c.durum === 'calgici' ? '#ffc078' : c.hediyeci ? '#ffe8a3' : c.npc ? '#dee2e6' : '#ffffff';
   const rol = c.durum === 'tellak' ? '🧽' : c.durum === 'yatiyor' ? '🛁' : c.durum === 'calgici' ? CALGI_IKON[c.calgi] : '';
@@ -2005,20 +2093,20 @@ function arayuzCiz() {
     ctx.fillText(`🧽 Tellak ${tellak}/${MAKS_TELLAK}`, gx, gy + 182);
   } else {
     ctx.fillStyle = 'rgba(20,20,30,0.75)';
-    ctx.beginPath(); ctx.roundRect(gx - 88, gy + 132, 176, 62, 14); ctx.fill();
+    ctx.beginPath(); ctx.roundRect(gx - 88, gy + 132, 176, 114, 14); ctx.fill();
     ctx.font = `800 15px ${font}`;
-    [['kemence', KEMENCE_JETON], ['davul', DAVUL_JETON]].forEach(([tur, jeton], i) => {
+    ['gelin', 'damat', 'kemence', 'davul'].forEach((tur, i) => {
       const kisi = S.calgi[tur];
       ctx.fillStyle = kisi ? '#ffc078' : '#adb5bd';
-      ctx.fillText(`${CALGI_IKON[tur]} ${kisi ? kisalt(kisi.ad, 11) : `${jeton} jeton: sen ol!`}`, gx, gy + 156 + i * 26);
+      ctx.fillText(`${CALGI_IKON[tur]} ${kisi ? kisalt(kisi.ad, 11) : `${ROL_JETON[tur]} jeton: sen ol!`}`, gx, gy + 156 + i * 26);
     });
     // şimdi çalan
     ctx.fillStyle = 'rgba(20,20,30,0.75)';
-    ctx.beginPath(); ctx.roundRect(gx - 88, gy + 202, 176, 50, 14); ctx.fill();
+    ctx.beginPath(); ctx.roundRect(gx - 88, gy + 254, 176, 50, 14); ctx.fill();
     ctx.font = `700 11px ${font}`; ctx.fillStyle = '#adb5bd';
-    ctx.fillText('ŞİMDİ ÇALIYOR', gx, gy + 220);
+    ctx.fillText('ŞİMDİ ÇALIYOR', gx, gy + 272);
     ctx.font = `800 15px ${font}`; ctx.fillStyle = '#74c0fc';
-    ctx.fillText(`🎵 ${kisalt(ses.sarki.ad, 17)}`, gx, gy + 241);
+    ctx.fillText(`🎵 ${kisalt(ses.sarki.ad, 17)}`, gx, gy + 293);
   }
 
   // olay akışı
@@ -2044,8 +2132,8 @@ function arayuzCiz() {
     ctx.font = `800 14px ${font}`;
     ctx.fillText(`🌹 1+ çıldır  •  🛁 ${YATMA_JETON}+ GÖBEK TAŞINA YAT  •  🧽 ${TELLAK_JETON}+ TELLAK OL  •  🎁 99+ kavga`, W / 2, H - 12);
   } else {
-    ctx.font = `800 14px ${font}`;
-    ctx.fillText(`🌹 1+ çıldır  •  🥁 ${DAVUL_JETON}+ DAVULCU OL  •  🎻 ${KEMENCE_JETON}+ KEMENÇECİ OL  •  🎁 99+ MAHALLE KAVGASI`, W / 2, H - 12);
+    ctx.font = `800 13px ${font}`;
+    ctx.fillText(`🌹1+ çıldır • 🥁${DAVUL_JETON}+ DAVULCU • 🎻${KEMENCE_JETON}+ KEMENÇECİ • 🤵${DAMAT_JETON}+ DAMAT • 👰${GELIN_JETON}+ GELİN • 🥊99+ KAVGA`, W / 2, H - 12);
   }
 
   // manşet
@@ -2077,7 +2165,7 @@ function demoGuncelle(dt) {
   const r = Math.random();
   if (r < 0.55) olayIsle({ tur: 'yorum', kisi, metin: sec(DEMO_YORUM) });
   else if (r < 0.85) olayIsle({ tur: 'begeni', kisi, adet: rint(1, 15) });
-  else if (r < 0.95) olayIsle({ tur: 'hediye', kisi, jeton: sec([1, 1, 1, 5, 10, 30]), hediye: sec(['Gül', 'Kalp', 'Donat']), adet: 1 });
+  else if (r < 0.95) olayIsle({ tur: 'hediye', kisi, jeton: sec([1, 1, 1, 5, 10, 20, 30]), hediye: sec(['Gül', 'Kalp', 'Donat']), adet: 1 });
   else if (r < 0.985) olayIsle({ tur: 'takip', kisi });
   else olayIsle({ tur: 'hediye', kisi, jeton: sec([99, 100, 199]), hediye: 'Büyük Hediye', adet: 1 });
 }

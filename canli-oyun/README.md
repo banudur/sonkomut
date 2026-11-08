@@ -2,11 +2,11 @@
 
 TikTok canlı yayını için, izleyicilerin yorum, beğeni ve hediyeleriyle yönettiği tavuk horonu oyunu.
 
-Yaylada tavuklar kanat kanada tutuşup 7/16 aksak ritimle horon teper. Ortada **kemençeci** ve **davulcu**
-yan yana çalar; izleyiciler hediyeyle bu rolleri kapabilir. Kavgalar halkanın altındaki çitli
+Yaylada tavuklar kanat kanada tutuşup 7/16 aksak ritimle horon teper. Ortada **gelin ile damat** dans eder,
+yanlarında **kemençeci** ve **davulcu** çalar; izleyiciler hediyeyle bu rolleri kapabilir. Kavgalar halkanın altındaki çitli
 **Kavga Meydanı**'nda olur, horon bozulmaz. Tempo yükselince tavuklar meşhur "titreme"ye geçer.
 
-| Horon, kemençeci ve davulcu | Mahalle kavgası |
+| Gelin, damat ve çalgıcılar | Mahalle kavgası |
 |---|---|
 | ![](ekran/a_horon.png) | ![](ekran/b_kavga.png) |
 
@@ -19,7 +19,7 @@ yan yana çalar; izleyiciler hediyeyle bu rolleri kapabilir. Kavgalar halkanın 
 | `şarkı` yazar | Sıradaki şarkıya geçilir (herkes için 15 sn bekleme). `türkü` ve `müzik` de olur |
 | `yumurta` yazar | Tavuğu gıdaklayarak yumurtlar |
 | `çıldır` yazar | Tavuğu birkaç saniye çıldırır (20 sn bekleme) |
-| `davul` / `kemençe` yazar | Tavuğu o çalgının kaç jeton olduğunu söyler |
+| `gelin` / `damat` / `davul` / `kemençe` yazar | Tavuğu o rolün kaç jeton olduğunu söyler |
 | Beğeni | Tempo göstergesi dolar, müzik ve dans hızlanır |
 | Takip / Paylaşım | Kalpler / yumurta yağmuru |
 
@@ -29,18 +29,22 @@ yan yana çalar; izleyiciler hediyeyle bu rolleri kapabilir. Kavgalar halkanın 
 |---|---|
 | 1-4 jeton | Gönderenin tavuğu **çıldırır**: deli gibi koşar, kanat çırpar, tüy saçar |
 | **5-9 jeton** | 🥁 **Davulcu olur** (3 dk). Tokmakla 2+2+3 vuruşlarında davula vurur |
-| **10-98 jeton** | 🎻 **Kemençeci olur** (3 dk). 30 ve üstünde ayrıca konfeti |
+| **10-19 jeton** | 🎻 **Kemençeci olur** (3 dk) |
+| **20-29 jeton** | 🤵 **Damat olur** (3 dk): siyah yelek, papyon, yaka çiçeği |
+| **30-98 jeton** | 👰 **Gelin olur** (3 dk): duvak, taç, gelinlik, kırmızı kuşak, buket. Ayrıca konfeti |
 | **99+ jeton** | 🥊 **Mahalle kavgası**: tavuklar ikişer ikişer Kavga Meydanı'na iner |
 | **500+ jeton** | Havai fişek ve kalıcı **altın taç**. Altın taçlı tavuk kavgalarda daha güçlüdür |
 
-Her çalgıda tek kişi çalar: **son hediye atan çalgıyı kapar**, önceki çalgıcı "Davulumu kaptılar! 😤" diyerek
-halaya döner. Aynı kişi tekrar atarsa süresi uzar. Çalgı boşken Kemençeci Horoz ve Davulcu Horoz çalar.
-Çalgıcılar kavgaya girmez.
+Her rolde tek kişi olur: **son hediye atan rolü kapar**, öncekinin tavuğu "Gelinliğimi kaptılar! 😭" ya da
+"Davulumu kaptılar! 😤" diyerek halaya döner. Aynı kişi tekrar atarsa süresi uzar. Rol boşken Gelin Tavuk,
+Damat Horoz, Kemençeci Horoz ve Davulcu Horoz yerinde durur. Gelin ve damat kanat kanada salınır,
+aralarından kalpler uçar. **İkisi de izleyiciyse "DÜĞÜN VAR!"** kutlaması olur (konfeti, kalpler, fanfar).
+Rol sahipleri kavgaya girmez.
 
 Ayrıca her 20-30 saniyede bir rastgele iki tavuk kendiliğinden kavgaya tutuşur. Hediye gönderenler kavgalarda
 daha şanslıdır. Lider tablosunda (Kümes Kralları) puanlar görünür.
 
-Jeton eşikleri `public/oyun.js` içinde `DAVUL_JETON` ve `KEMENCE_JETON` sabitlerindedir.
+Jeton eşikleri `public/oyun.js` içinde `DAVUL_JETON`, `KEMENCE_JETON`, `DAMAT_JETON` ve `GELIN_JETON` sabitlerindedir.
 
 ## Şarkılar
 
@@ -98,7 +102,7 @@ TikTok'un resmî bir canlı yayın API'si yok. Bağlantı açık kaynak
 server.js          TikTok köprüsü + web sunucusu (port 8080)
 public/index.html  Oyun ekranı (yayına eklenen sayfa)
 public/panel.html  Kontrol paneli
-public/oyun.js     Oyun: tavuklar, horon, çalgıcılar, kavga meydanı, arayüz
+public/oyun.js     Oyun: tavuklar, horon, gelin-damat ve çalgıcılar, kavga meydanı, arayüz
 public/ses.js      Horon havaları, şarkı dosyalarını çalma ve efektler
 public/muzik/      Kendi türkü dosyalarınız
 ```
